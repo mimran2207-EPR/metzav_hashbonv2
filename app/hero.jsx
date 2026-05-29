@@ -1,4 +1,7 @@
-// hero.jsx — Hero Zone (identity / balance / alerts cards + AI insights strip) + Smart Action Bar
+import React, { useState } from 'react';
+import { Icon } from './icons.jsx';
+import { Card, Chip, PillButton } from './ui.jsx';
+import { YEARS, fmt } from './data.jsx';
 
 function fieldRow(label, value, mono) {
   return (
@@ -162,7 +165,6 @@ function HeroZone({ p, totals, year, notesCount, docsCount, insights, handlers, 
   );
 }
 
-// ── Smart Action Bar ───────────────────────────────────────────────────────
 function ActionBar({ notesCount, year, onYear, handlers }) {
   const [yearOpen, setYearOpen] = useState(false);
   const groups = [
@@ -208,7 +210,6 @@ function ActionBar({ notesCount, year, onYear, handlers }) {
         </React.Fragment>
       ))}
       <div style={{ flex: 1 }}/>
-      {/* year picker */}
       <div style={{ position: "relative" }}>
         <button data-focusring onClick={() => setYearOpen(o => !o)} style={{ display: "flex", alignItems: "center", gap: 8,
           border: "1px solid var(--ink-200)", background: "var(--white)", borderRadius: 999, padding: "7px 14px",
@@ -239,4 +240,4 @@ function ActionBar({ notesCount, year, onYear, handlers }) {
   );
 }
 
-Object.assign(window, { HeroZone, ActionBar });
+export { HeroZone, ActionBar };

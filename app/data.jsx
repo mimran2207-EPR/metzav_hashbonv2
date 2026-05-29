@@ -1,29 +1,26 @@
-// data.jsx — mock account-status data for payer יהודה מימראן (040499667)
-// Sums computed so the UI stays internally consistent.
+// data.jsx — mock account-status data (demo only — all personal details are fictional)
 
 const PAYER = {
-  name: "יהודה מימראן",
-  payerNo: "040499667",
-  taz: "058814203",
+  name: "ישראל לדוגמה",
+  payerNo: "999-DEMO",
+  taz: "000000000",
   type: "משלם פרטי",
-  address: "חזון איש 21, דירה 16",
-  city: "מודיעין עילית",
-  zip: "71919",
-  phone: "958-603-9422",
-  email: "y.mimran@gmail.com",
+  address: "רחוב הדוגמה 1, דירה 1",
+  city: "עיר הדוגמה",
+  zip: "00000",
+  phone: "000-000-0000",
+  email: "demo@example.com",
   council: "מועצה אזורית שדות נגב",
   since: "2008",
   status: "פעיל",
 };
 
-// נושאים / ישויות (subjects) attached to the payer
 const ENTITIES = [
-  { id: "5002205", subject: 3,  subjectName: "נכס", title: "דירת מגורים", sub: "חזון איש 21, דירה 16", balance: 11268, services: 3 },
+  { id: "5002205", subject: 3,  subjectName: "נכס", title: "דירת מגורים", sub: "רחוב הדוגמה 1, דירה 1", balance: 11268, services: 3 },
   { id: "13-88142", subject: 13, subjectName: "מים שוטף", title: "מד מים 2\"", sub: "צריכה רבעונית", balance: 1386, services: 1 },
-  { id: "15-2204",  subject: 15, subjectName: "שלטים", title: "שילוט עסק", sub: "חזון איש 21", balance: 0, services: 1 },
+  { id: "15-2204",  subject: 15, subjectName: "שלטים", title: "שילוט עסק", sub: "רחוב הדוגמה 1", balance: 0, services: 1 },
 ];
 
-// סוגי שירות — balance breakdown (per service)
 const SERVICES = [
   { id: "arnona",  name: "ארנונה", entity: "5002205", nominal: 8420, indexation: 612, interest: 1340, get balance(){ return this.nominal+this.indexation+this.interest; }, txns: 9 },
   { id: "water",   name: "מים וביוב", entity: "13-88142", nominal: 1180, indexation: 64, interest: 142, get balance(){ return this.nominal+this.indexation+this.interest; }, txns: 6 },
@@ -40,7 +37,6 @@ const TOTALS = {
   get balance() { return this.nominal + this.indexation + this.interest; },
 };
 
-// תנועות (transactions) keyed by service; running balance flows top→bottom (newest first display reversed)
 const TXN_TYPES = {
   8:   "יתרה עוברת",
   1:   "תק. ארנונה",
@@ -92,7 +88,6 @@ const TXNS = {
 
 const YEARS = Array.from({ length: 2026 - 2007 + 1 }, (_, i) => 2026 - i);
 
-// AI insights (Explainable — each carries a source)
 const AI_INSIGHTS = [
   { id: "growth", tone: "warn", icon: "trend",
     text: "החוב גדל ב-21% מתחילת השנה — ₪1,950 מתוכם ריבית והצמדה מצטברת.",
@@ -105,7 +100,6 @@ const AI_INSIGHTS = [
     source: "קובץ אב משלמים · נושא 1", weight: 1 },
 ];
 
-// Suggested next actions (Context-aware)
 const AI_ACTIONS = [
   { id: "arrangement", icon: "card",    label: "הצע הסדר תשלומים", hint: "6 תשלומים · ₪2,262 לחודש" },
   { id: "letter",      icon: "send",    label: "נסח מכתב התראה", hint: "טיוטה אוטומטית מוכנה" },
@@ -113,7 +107,6 @@ const AI_ACTIONS = [
   { id: "summary",     icon: "sigma",   label: "הפק סיכום למשלם", hint: "PDF · עברית" },
 ];
 
-// פעולות מהירות — operational quick actions (collection clerk)
 const QUICK_ACTIONS = [
   { id: "update_arrangement", icon: "card",    label: "עדכון הסדר",        hint: "הסדר תשלומים פעיל" },
   { id: "credit_charge",      icon: "receipt", label: "זיכוי חיוב לנכס",   hint: "ביטול / תיקון חיוב" },
@@ -122,7 +115,6 @@ const QUICK_ACTIONS = [
   { id: "view_refs",          icon: "docs",    label: "הצגת אסמכתאות",     hint: "צפייה במסמכים מקושרים" },
 ];
 
-// Notes (drawer) — count shown on action bar
 const NOTES = [
   { id: 1, author: "שמעון עמר", role: "פקיד גבייה", date: "28/05/2026 14:12", text: "המשלם פנה טלפונית, ביקש לפרוס את יתרת הארנונה ל-6 תשלומים. ממתין לאישור מנהל." },
   { id: 2, author: "רונית כהן", role: "מוקדנית", date: "21/05/2026 09:40", text: "נשלח מכתב התראה ראשון בדואר רשום. אסמכתא RR-44120." },
@@ -130,7 +122,6 @@ const NOTES = [
   { id: 4, author: "שמעון עמר", role: "פקיד גבייה", date: "12/02/2026 11:05", text: "אושרה הנחת ועדה 15% לשנת 2026 בגין מצב סוציו-אקונומי." },
 ];
 
-// Documents
 const DOCUMENTS = [
   { id: 1, name: "שובר ארנונה 2026 — מחזור 1", type: "PDF", date: "01/01/2026", size: "240KB" },
   { id: 2, name: "אישור ועדת הנחות", type: "PDF", date: "12/02/2026", size: "180KB" },
@@ -138,14 +129,13 @@ const DOCUMENTS = [
   { id: 4, name: "צילום ת.ז.", type: "JPG", date: "08/03/2024", size: "1.2MB" },
 ];
 
-// Currency / number helpers
 function nis(n, withSign = true) {
   const v = Math.abs(Math.round(n)).toLocaleString("en-US");
   return (withSign ? "₪" : "") + v;
 }
 function fmt(n) { return Math.round(n).toLocaleString("en-US"); }
 
-Object.assign(window, {
+export {
   PAYER, ENTITIES, SERVICES, TOTALS, TXNS, TXN_TYPES, YEARS,
   AI_INSIGHTS, AI_ACTIONS, QUICK_ACTIONS, NOTES, DOCUMENTS, nis, fmt,
-});
+};

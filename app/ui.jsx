@@ -1,5 +1,5 @@
-// ui.jsx — shared primitives: PillButton, Card, Chip, Tip, Toast, Segmented, Sheet
-const { useState, useEffect, useRef, useCallback } = React;
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Icon } from './icons.jsx';
 
 function PillButton({ children, variant = "primary", size = "md", chevron = false, icon, onClick, style, title }) {
   const [hover, setHover] = useState(false);
@@ -58,7 +58,6 @@ function Chip({ children, tone = "teal", style }) {
   );
 }
 
-// Section heading (teal, with optional sub + right slot)
 function SectionHead({ title, sub, icon, right }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 14 }}>
@@ -75,7 +74,6 @@ function SectionHead({ title, sub, icon, right }) {
   );
 }
 
-// Tooltip wrapper (simple, hover)
 function Tip({ label, children, side = "bottom" }) {
   const [show, setShow] = useState(false);
   const pos = side === "bottom"
@@ -96,7 +94,6 @@ function Tip({ label, children, side = "bottom" }) {
   );
 }
 
-// Segmented control (RTL)
 function Segmented({ options, value, onChange, size = "md" }) {
   return (
     <div style={{ display: "inline-flex", background: "var(--ink-100)", borderRadius: 999, padding: 3, gap: 2 }}>
@@ -116,7 +113,6 @@ function Segmented({ options, value, onChange, size = "md" }) {
   );
 }
 
-// Toast host (imperative via window.muToast)
 function ToastHost() {
   const [items, setItems] = useState([]);
   useEffect(() => {
@@ -142,7 +138,6 @@ function ToastHost() {
   );
 }
 
-// Right-side sheet / drawer
 function Sheet({ open, onClose, title, sub, width = 420, children, footer, side = "start" }) {
   if (!open) return null;
   const edge = side === "start" ? { insetInlineStart: 0 } : { insetInlineEnd: 0 };
@@ -170,5 +165,4 @@ function Sheet({ open, onClose, title, sub, width = 420, children, footer, side 
   );
 }
 
-Object.assign(window, { PillButton, Card, Chip, SectionHead, Tip, Segmented, ToastHost, Sheet,
-  useState, useEffect, useRef, useCallback });
+export { PillButton, Card, Chip, SectionHead, Tip, Segmented, ToastHost, Sheet };

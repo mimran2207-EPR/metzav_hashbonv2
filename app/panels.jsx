@@ -1,13 +1,13 @@
-// panels.jsx — left AI column + overlays (Command Bar, AI Copilot, Notes, Documents, Interest calc)
+import React, { useState, useRef, useEffect } from 'react';
+import { Icon } from './icons.jsx';
+import { SectionHead, Card } from './ui.jsx';
 
-// ── Left AI column ──────────────────────────────────────────────────────────
 function LeftColumn({ insights, actions, onCopilot, onAction, mode = "balanced" }) {
   const showInsights = mode !== "subtle";
   const showHistory = mode !== "subtle";
   const bold = mode === "bold";
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      {/* Copilot teaser */}
       <div style={{ borderRadius: 16, padding: 18, color: "#fff", position: "relative", overflow: "hidden",
         background: "linear-gradient(140deg,var(--teal-600),var(--teal-800))", boxShadow: "var(--shadow-md)" }}>
         <div style={{ position: "absolute", insetInlineStart: -30, top: -30, width: 120, height: 120, borderRadius: 999, background: "rgba(255,255,255,.07)" }}/>
@@ -30,7 +30,6 @@ function LeftColumn({ insights, actions, onCopilot, onAction, mode = "balanced" 
         </button>
       </div>
 
-      {/* Explainable insights */}
       {showInsights && (
       <Card pad={18} style={bold ? { borderColor: "var(--teal-200)", boxShadow: "var(--shadow-md)" } : null}>
         <SectionHead title="תובנות והסברים" sub="כל המלצה מלווה במקור" icon="info"/>
@@ -57,7 +56,6 @@ function LeftColumn({ insights, actions, onCopilot, onAction, mode = "balanced" 
       </Card>
       )}
 
-      {/* Quick actions */}
       <Card pad={18}>
         <SectionHead title="פעולות מהירות" icon="sparkle"/>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -80,12 +78,11 @@ function LeftColumn({ insights, actions, onCopilot, onAction, mode = "balanced" 
         </div>
       </Card>
 
-      {/* Historical payers */}
       {showHistory && (
       <Card pad={18}>
         <SectionHead title="משלמים היסטוריים" icon="history"/>
         <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
-          {[{ n: "מימראן יהודה (קודם)", no: "030441900", y: "2008–2014" }, { n: "מימראן רחל", no: "041220987", y: "2014–2019" }].map((h, i) => (
+          {[{ n: "לדוגמה ישראל (קודם)", no: "888-DEMO-1", y: "2008–2014" }, { n: "לדוגמה רחל", no: "888-DEMO-2", y: "2014–2019" }].map((h, i) => (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13 }}>
               <div style={{ width: 28, height: 28, borderRadius: 999, background: "var(--ink-100)", color: "var(--ink-500)", display: "grid", placeItems: "center", flex: "none" }}>
                 <Icon name="user" size={15} color="var(--ink-500)"/>
@@ -103,7 +100,6 @@ function LeftColumn({ insights, actions, onCopilot, onAction, mode = "balanced" 
   );
 }
 
-// ── Command Bar (⌘K) ───────────────────────────────────────────────────────
 function CommandBar({ open, onClose, onRun }) {
   const [q, setQ] = useState("");
   const [sel, setSel] = useState(0);
@@ -119,14 +115,14 @@ function CommandBar({ open, onClose, onRun }) {
     { group: "מסכים", id: "enforce", icon: "shield", label: "מסך אכיפה", hint: "התראות וסנקציות" },
     { group: "מסכים", id: "notes", icon: "notes", label: "הערות המשלם", hint: "25 הערות" },
     { group: "מסכים", id: "docs", icon: "docs", label: "מסמכים מקושרים", hint: "4 מסמכים" },
-    { group: "משלמים", id: "p1", icon: "user", label: "מימראן יהודה", hint: "משלם 040499667 · פעיל" },
+    { group: "משלמים", id: "p1", icon: "user", label: "ישראל לדוגמה", hint: "משלם 999-DEMO · פעיל" },
     { group: "משלמים", id: "p2", icon: "user", label: "כהן דוד", hint: "משלם 028841200" },
-    { group: "משלמים", id: "p3", icon: "building", label: "פיזי 5002205", hint: "נכס · חזון איש 21" },
-    { group: "היסטוריה", id: "h1", icon: "clock", label: "מצב חשבון · מימראן יהודה", hint: "נצפה לאחרונה" },
+    { group: "משלמים", id: "p3", icon: "building", label: "פיזי 5002205", hint: "נכס · רחוב הדוגמה 1" },
+    { group: "היסטוריה", id: "h1", icon: "clock", label: "מצב חשבון · ישראל לדוגמה", hint: "נצפה לאחרונה" },
   ];
   const filtered = q ? all.filter(it => (it.label + it.hint).includes(q)) : all;
   const groups = [...new Set(filtered.map(f => f.group))];
-  const flat = filtered; // selection index over flat list
+  const flat = filtered;
 
   const onKey = (e) => {
     if (e.key === "ArrowDown") { e.preventDefault(); setSel(s => Math.min(s + 1, flat.length - 1)); }
@@ -177,8 +173,8 @@ function CommandBar({ open, onClose, onRun }) {
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "9px 18px", borderTop: "1px solid var(--ink-100)",
           background: "var(--ink-50)", fontSize: 11.5, color: "var(--ink-500)" }}>
-          <span style={{ display: "flex", alignItems: "center", gap: 5 }}><kbd style={kbd}>↑</kbd><kbd style={kbd}>↓</kbd> ניווט</span>
-          <span style={{ display: "flex", alignItems: "center", gap: 5 }}><kbd style={kbd}>↵</kbd> בחירה</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 5 }}><kbd style={kbdStyle}>↑</kbd><kbd style={kbdStyle}>↓</kbd> ניווט</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 5 }}><kbd style={kbdStyle}>↵</kbd> בחירה</span>
           <div style={{ flex: 1 }}/>
           <span style={{ display: "flex", alignItems: "center", gap: 5 }}><Icon name="sparkle" size={13} color="var(--teal-500)"/> מופעל ע״י AI</span>
         </div>
@@ -186,6 +182,6 @@ function CommandBar({ open, onClose, onRun }) {
     </div>
   );
 }
-const kbd = { fontFamily: "var(--font)", fontSize: 11, fontWeight: 600, color: "var(--ink-600)", background: "#fff", border: "1px solid var(--ink-300)", borderRadius: 5, padding: "1px 5px" };
+const kbdStyle = { fontFamily: "var(--font)", fontSize: 11, fontWeight: 600, color: "var(--ink-600)", background: "#fff", border: "1px solid var(--ink-300)", borderRadius: 5, padding: "1px 5px" };
 
-Object.assign(window, { LeftColumn, CommandBar });
+export { LeftColumn, CommandBar };

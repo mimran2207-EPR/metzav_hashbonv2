@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40" fill="none">
+  
+  <circle cx="18" cy="20" r="14" fill="none" stroke="#2AA7B8" stroke-width="2.5"></circle>
+  <circle cx="18" cy="20" r="4" fill="#2AA7B8"></circle>
+  <text x="38" y="19" font-family="Rubik, sans-serif" font-size="13" font-weight="700" fill="#166F7C">EPR</text>
+  <text x="38" y="33" font-family="Rubik, sans-serif" font-size="9" font-weight="400" fill="#6B7C8E">systems</text>
+</svg>

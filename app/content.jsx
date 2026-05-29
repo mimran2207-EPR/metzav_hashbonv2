@@ -1,5 +1,7 @@
-// content.jsx — main content: entities strip, balances table (progressive disclosure),
-// transactions, and the left AI column.
+import React, { useState } from 'react';
+import { Icon } from './icons.jsx';
+import { Chip, Segmented } from './ui.jsx';
+import { fmt } from './data.jsx';
 
 function EntityStrip({ entities, selected, onSelect }) {
   const subjIcon = { 3: "building", 13: "droplet", 15: "receipt", 1: "user" };
@@ -50,7 +52,6 @@ function entityIcon(active) {
     background: active ? "var(--teal-500)" : "var(--teal-50)" };
 }
 
-// ── Balances table with expandable transactions ─────────────────────────────
 function BalancesTable({ services, totals, density, txns, txnTypes }) {
   const [open, setOpen] = useState(null);
   const compact = density === "compact";
@@ -191,4 +192,4 @@ function TxnTable({ rows, types, compact }) {
   );
 }
 
-Object.assign(window, { EntityStrip, BalancesTable, TxnTable });
+export { EntityStrip, BalancesTable, TxnTable };

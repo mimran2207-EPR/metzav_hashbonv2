@@ -1,4 +1,8 @@
 // panels2.jsx — AI Copilot chat, Notes drawer, Documents drawer, Interest calculator
+import React, { useState, useRef, useEffect } from 'react';
+import { Icon } from './icons.jsx';
+import { Sheet, PillButton, Chip } from './ui.jsx';
+import { fmt } from './data.jsx';
 
 function CopilotPanel({ open, onClose }) {
   const [msgs, setMsgs] = useState([
@@ -32,7 +36,7 @@ function CopilotPanel({ open, onClose }) {
     setInput("");
     setTyping(true);
     setTimeout(() => {
-      const a = canned[q] || { text: "ניתחתי את הבקשה מול נתוני המשלם. ניתן לחדד את השאלה או לבחור אחת ההצעות המוכנות למעלה.", cites: ["תיק המשלם 040499667"] };
+      const a = canned[q] || { text: "ניתחתי את הבקשה מול נתוני המשלם. ניתן לחדד את השאלה או לבחור אחת ההצעות המוכנות למעלה.", cites: ["תיק המשלם 999-DEMO"] };
       setTyping(false);
       setMsgs(m => [...m, { who: "ai", text: a.text, cites: a.cites }]);
     }, 1100);
@@ -104,7 +108,7 @@ function CopilotPanel({ open, onClose }) {
 function NotesDrawer({ open, onClose, notes, onAdd }) {
   const [draft, setDraft] = useState("");
   return (
-    <Sheet open={open} onClose={onClose} side="end" width={420} title={`הערות (${notes.length})`} sub="מימראן יהודה · 040499667"
+    <Sheet open={open} onClose={onClose} side="end" width={420} title={`הערות (${notes.length})`} sub="מימראן יהודה · 999-DEMO"
       footer={
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <textarea value={draft} onChange={e => setDraft(e.target.value)} placeholder="הוסף הערה חדשה…" rows={2}
@@ -214,4 +218,4 @@ function InterestCalc({ open, onClose, baseNominal }) {
   );
 }
 
-Object.assign(window, { CopilotPanel, NotesDrawer, DocsDrawer, InterestCalc });
+export { CopilotPanel, NotesDrawer, DocsDrawer, InterestCalc };

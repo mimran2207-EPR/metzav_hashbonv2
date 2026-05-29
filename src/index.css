@@ -1,0 +1,43 @@
+@font-face { font-family:"Rubik"; src:url("/fonts/Rubik-Light.ttf") format("truetype"); font-weight:300; font-display:swap; }
+@font-face { font-family:"Rubik"; src:url("/fonts/Rubik-Regular.ttf") format("truetype"); font-weight:400; font-display:swap; }
+@font-face { font-family:"Rubik"; src:url("/fonts/Rubik-Medium.ttf") format("truetype"); font-weight:500; font-display:swap; }
+@font-face { font-family:"Rubik"; src:url("/fonts/Rubik-SemiBold.ttf") format("truetype"); font-weight:600; font-display:swap; }
+@font-face { font-family:"Rubik"; src:url("/fonts/Rubik-Bold.ttf") format("truetype"); font-weight:700; font-display:swap; }
+
+:root{
+  --teal-50:#E6F5F7; --teal-100:#CDEBEF; --teal-200:#9FDBE2; --teal-300:#70C8D2;
+  --teal-400:#4AB7C4; --teal-500:#2AA7B8; --teal-600:#1D8F9F; --teal-700:#166F7C;
+  --teal-800:#0E525C; --teal-900:#083C44;
+  --ink-900:#1B2A3A; --ink-800:#2E4256; --ink-700:#4A5E72; --ink-600:#6B7C8E;
+  --ink-500:#8FA0B0; --ink-400:#B5C1CC; --ink-300:#D6DDE3; --ink-200:#E8ECEF;
+  --ink-100:#F2F5F7; --ink-50:#F7F9FB; --white:#FFFFFF;
+  --blue:#2E6BE6; --red:#E24B4B; --amber:#F2B134; --green:#3BB76E;
+  --wash-hero:linear-gradient(180deg,#EAF6F8 0%,#F5FBFC 55%,#F7F9FB 100%);
+  --shadow-card:0 1px 2px rgba(18,48,60,.04),0 4px 14px rgba(18,48,60,.05);
+  --shadow-md:0 6px 16px rgba(18,48,60,.06);
+  --shadow-lg:0 12px 28px rgba(18,48,60,.10);
+  --shadow-focus:0 0 0 3px rgba(42,167,184,.25);
+  --font:"Rubik","Arial Hebrew","Segoe UI",system-ui,sans-serif;
+}
+*{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; }
+body{
+  font-family:var(--font); direction:rtl; background:var(--ink-50);
+  color:var(--ink-800); font-size:15px; line-height:1.5;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+.num{ font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1; direction:ltr; unicode-bidi:isolate; }
+button{ font-family:inherit; }
+::selection{ background:var(--teal-200); }
+*::-webkit-scrollbar{ width:10px; height:10px; }
+*::-webkit-scrollbar-thumb{ background:var(--ink-300); border-radius:99px; border:2px solid transparent; background-clip:content-box; }
+*::-webkit-scrollbar-thumb:hover{ background:var(--ink-400); background-clip:content-box; }
+@keyframes muFade{ from{opacity:0} to{opacity:1} }
+@keyframes muRise{ from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none} }
+@keyframes muSlideL{ from{transform:translateX(-110%)} to{transform:none} }
+@keyframes muSlideR{ from{transform:translateX(110%)} to{transform:none} }
+@keyframes muType{ 0%{opacity:.3} 50%{opacity:1} 100%{opacity:.3} }
+@keyframes muSpin{ to{ transform:rotate(360deg) } }
+@keyframes muPulse{ 0%,100%{ opacity:1 } 50%{ opacity:.35 } }
+.mu-rise{ animation:muRise .28s ease both; }
+[data-focusring]:focus-visible{ outline:none; box-shadow:var(--shadow-focus); border-radius:8px; }

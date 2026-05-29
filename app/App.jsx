@@ -1,5 +1,13 @@
 // App.jsx — composes the מצב חשבון workspace + state management
-const { useState: useS, useEffect: useE } = React;
+import React, { useState, useEffect } from 'react';
+import { TopBar, FooterBand } from './chrome.jsx';
+import { HeroZone, ActionBar } from './hero.jsx';
+import { EntityStrip, BalancesTable } from './content.jsx';
+import { LeftColumn, CommandBar } from './panels.jsx';
+import { CopilotPanel, NotesDrawer, DocsDrawer, InterestCalc } from './panels2.jsx';
+import { useTweaks, TweaksPanel, TweakSection, TweakRadio, TweakColor, TweakToggle } from './tweaks-panel.jsx';
+import { SectionHead, Card, Segmented, ToastHost } from './ui.jsx';
+import { PAYER, TOTALS, SERVICES, TXNS, TXN_TYPES, ENTITIES, DOCUMENTS, AI_INSIGHTS, QUICK_ACTIONS, NOTES } from './data.jsx';
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "accent": "#2AA7B8",
@@ -10,26 +18,26 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 
 function App() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
-  const [year, setYear] = useS(2026);
-  const [entity, setEntity] = useS("all");
-  const [density, setDensity] = useS(t.density);
-  const [notes, setNotes] = useS(NOTES);
+  const [year, setYear] = useState(2026);
+  const [entity, setEntity] = useState("all");
+  const [density, setDensity] = useState(t.density);
+  const [notes, setNotes] = useState(NOTES);
 
   // tweak: density sync + accent override (stays in the teal family)
-  useE(() => setDensity(t.density), [t.density]);
-  useE(() => {
+  useEffect(() => setDensity(t.density), [t.density]);
+  useEffect(() => {
     document.documentElement.style.setProperty("--teal-500", t.accent);
   }, [t.accent]);
   const ai = t.aiProminence; // subtle | balanced | bold
 
-  const [cmdOpen, setCmdOpen] = useS(false);
-  const [copilot, setCopilot] = useS(false);
-  const [notesOpen, setNotesOpen] = useS(false);
-  const [docsOpen, setDocsOpen] = useS(false);
-  const [calcOpen, setCalcOpen] = useS(false);
+  const [cmdOpen, setCmdOpen] = useState(false);
+  const [copilot, setCopilot] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [docsOpen, setDocsOpen] = useState(false);
+  const [calcOpen, setCalcOpen] = useState(false);
 
   // ⌘K / Ctrl+K + shortcuts
-  useE(() => {
+  useEffect(() => {
     const onKey = (e) => {
       const k = e.key.toLowerCase();
       if ((e.metaKey || e.ctrlKey) && k === "k") { e.preventDefault(); setCmdOpen(o => !o); }
@@ -81,7 +89,7 @@ function App() {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <TopBar onCommand={() => setCmdOpen(true)} onNav={(id) => window.muToast({ home: "חזרה לעמוד הבית", back: "ניווט אחורה", forward: "ניווט קדימה", history: "היסטוריית מסכים", fav: "נוסף למועדפים" }[id] || "ניווט", id === "fav" ? "star" : "home")}
-        year={year} breadcrumb={{ name: PAYER.name, no: PAYER.payerNo }}/>
+          year={year} breadcrumb={{ name: PAYER.name, no: PAYER.payerNo }}/>
 
       {/* hero atmosphere wash */}
       <div style={{ background: "var(--wash-hero)", borderBottom: "1px solid var(--ink-100)" }}>
@@ -152,4 +160,4 @@ function App() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+export default App;

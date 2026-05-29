@@ -1,5 +1,5 @@
-// icons.jsx — MUNI line-icon set (Lucide-style, 1.7px stroke, rounded caps).
-// Usage: <Icon name="notes" size={20} color="..." stroke={1.8}/>
+import React from 'react';
+
 const ICON_PATHS = {
   search:      <><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></>,
   command:     <path d="M9 6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3z"/>,
@@ -60,4 +60,4 @@ function Icon({ name, size = 20, color = "currentColor", stroke = 1.8, style }) 
   );
 }
 
-Object.assign(window, { Icon, ICON_PATHS });
+export { Icon, ICON_PATHS };
