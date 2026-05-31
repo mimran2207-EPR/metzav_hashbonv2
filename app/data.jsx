@@ -285,7 +285,55 @@ const DOCUMENTS = [
 
 function fmt(n) { return Math.round(n).toLocaleString("en-US"); }
 
+// ── BPM layer ───────────────────────────────────────────────────────────────
+// WORKLIST — the clerk's case queue (entry screen). Each case carries priority,
+// SLA, status, assignee, a propensity-to-pay score, and a Next-Best-Action.
+// `nba.flow` matches a FlowHost id so the recommendation is one click to execute.
+const STATUS = {
+  new:        { label: "חדש",        tone: "blue"  },
+  active:     { label: "בטיפול",     tone: "teal"  },
+  arrangement:{ label: "בהסדר",      tone: "green" },
+  enforcement:{ label: "באכיפה",     tone: "red"   },
+  waiting:    { label: "ממתין",      tone: "amber" },
+  resolved:   { label: "טופל",       tone: "gray"  },
+};
+const WORKLIST = [
+  { id: "999-DEMO",   name: "ישראל לדוגמה", balance: 13574, priority: "crit", status: "active",
+    sla: "חורג ב-3 ימים", slaOverdue: true, assignee: "שמעון עמר", score: 78, tasks: 2,
+    last: "מכתב התראה · 21/05", nba: { label: "הצע הסדר תשלומים", flow: "arrangement" }, tags: ["ארנונה", "2 שוברים"] },
+  { id: "028841200",  name: "כהן דוד",       balance: 28960, priority: "crit", status: "enforcement",
+    sla: "חורג ב-12 ימים", slaOverdue: true, assignee: "שמעון עמר", score: 31, tasks: 3,
+    last: "עיקול בנק · 14/05", nba: { label: "המשך אכיפה", flow: "enforce" }, tags: ["עסק", "ותיק"] },
+  { id: "301992847",  name: "לוי שרה",       balance: 4120,  priority: "high", status: "waiting",
+    sla: "תוך 2 ימים", slaOverdue: false, assignee: "רונית כהן", score: 64, tasks: 1,
+    last: "המתנה לאישור ועדה", nba: { label: "אשר הנחת ועדה", flow: "discount" }, tags: ["הנחה"] },
+  { id: "205518830",  name: "אברהם יצחק",    balance: 9870,  priority: "high", status: "new",
+    sla: "תוך 4 ימים", slaOverdue: false, assignee: "—", score: 52, tasks: 0,
+    last: "תיק נפתח · 29/05", nba: { label: "שלח דרישת תשלום", flow: "letter" }, tags: ["חדש"] },
+  { id: "118402665",  name: "מזרחי רחל",      balance: 1980,  priority: "med",  status: "arrangement",
+    sla: "תקין", slaOverdue: false, assignee: "רונית כהן", score: 88, tasks: 0,
+    last: "תשלום 3/6 · במועד", nba: { label: "ללא פעולה — במסלול", flow: null }, tags: ["הסדר פעיל"] },
+  { id: "442087109",  name: "פרץ משה",       balance: 760,   priority: "low",  status: "active",
+    sla: "תקין", slaOverdue: false, assignee: "שמעון עמר", score: 71, tasks: 1,
+    last: "תזכורת SMS · 20/05", nba: { label: "שלח תזכורת תשלום", flow: "letter" }, tags: ["מים"] },
+  { id: "667301284",  name: "דהן אורי",      balance: 15230, priority: "high", status: "active",
+    sla: "תוך 1 יום", slaOverdue: false, assignee: "שמעון עמר", score: 44, tasks: 2,
+    last: "שיחה יוצאת · 22/05", nba: { label: "הצע הסדר תשלומים", flow: "arrangement" }, tags: ["ארנונה", "עסק"] },
+  { id: "550113907",  name: "ביטון נעמה",    balance: 0,     priority: "low",  status: "resolved",
+    sla: "—", slaOverdue: false, assignee: "רונית כהן", score: 100, tasks: 0,
+    last: "חוב סולק · 18/05", nba: { label: "סגור תיק", flow: null }, tags: ["שולם"] },
+];
+
+// CASE_TIMELINE — seed history for the open case (live flow events prepend to this).
+const CASE_TIMELINE = [
+  { id: 1, type: "letter",  icon: "send",   tone: "warn", time: "21/05/2026 09:40", title: "מכתב התראה ראשון נשלח", detail: "דואר רשום · אסמכתא RR-44120 · רונית כהן" },
+  { id: 2, type: "system",  icon: "calc",   tone: "gray", time: "30/04/2026 02:00", title: "חישוב ריבית והצמדה חודשי", detail: "בוצע אוטומטית לכלל השירותים הפתוחים" },
+  { id: 3, type: "discount",icon: "wallet", tone: "good", time: "12/02/2026 11:05", title: "אושרה הנחת ועדה 15%", detail: "מצב סוציו-אקונומי · שמעון עמר" },
+  { id: 4, type: "open",    icon: "user",   tone: "teal", time: "01/01/2026 00:00", title: "תיק גבייה נפתח לשנת 2026", detail: "חיוב שנתי הופק · יתרת פתיחה ₪7,980" },
+];
+
 export {
   PAYER, ENTITIES, SUBJECTS, SUBJECT_DETAILS, SERVICES, TOTALS, TXNS, TXN_TYPES, YEARS, YEAR_BALANCES,
   AI_INSIGHTS, AI_ACTIONS, QUICK_ACTIONS, NOTES, DOCUMENTS, LEDGER, LEDGER_COLUMNS, fmt,
+  WORKLIST, STATUS, CASE_TIMELINE,
 };

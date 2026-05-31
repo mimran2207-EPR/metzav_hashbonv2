@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { TopBar, FooterBand } from './chrome.jsx';
 import { HeroZone, ActionBar } from './hero.jsx';
 import { SubjectStrip, AllEntitiesView } from './content.jsx';
+import { Worklist, CaseTimeline } from './worklist.jsx';
 import { FloatingCopilot, CommandBar } from './panels.jsx';
 import { CopilotPanel, NotesDrawer, DocsDrawer, InterestCalc } from './panels2.jsx';
 import { WideTxnScreen } from './wide-txns.jsx';
@@ -10,7 +11,7 @@ import { FlowHost } from './flows.jsx';
 import { useTweaks, TweaksPanel, TweakSection, TweakRadio, TweakColor, TweakToggle } from './tweaks-panel.jsx';
 import { SectionHead, Card, Segmented, ToastHost, useMediaQuery } from './ui.jsx';
 import { Icon } from './icons.jsx';
-import { PAYER, TOTALS, SERVICES, TXNS, TXN_TYPES, SUBJECTS, DOCUMENTS, AI_INSIGHTS, QUICK_ACTIONS, NOTES } from './data.jsx';
+import { PAYER, TOTALS, SERVICES, TXNS, TXN_TYPES, SUBJECTS, DOCUMENTS, AI_INSIGHTS, QUICK_ACTIONS, NOTES, WORKLIST, STATUS, CASE_TIMELINE } from './data.jsx';
 import { ThemePicker, THEMES, generateThemeFromColor } from './table-utils.jsx';
 import { usePersistedState, loadPref, savePref } from './storage.js';
 
@@ -45,7 +46,9 @@ function App() {
   const [wideNaxas, setWideNaxas] = useState(null);
   const [themeId, setThemeId] = usePersistedState("themeId", "teal");
   const [flow, setFlow] = useState(null);          // {id, ctx} active action flow
-  const [caseEvents, setCaseEvents] = useState([]); // case timeline events
+  const [caseEvents, setCaseEvents] = useState([]); // live case timeline events
+  const [view, setView] = useState("worklist");    // "worklist" (queue) | "case"
+  const [activeCase, setActiveCase] = useState(WORKLIST[0]);
 
   // Apply color theme dynamically (preset themes); custom handled below
   useEffect(() => {
@@ -78,7 +81,15 @@ function App() {
   }, []);
 
   const activeSubject = SUBJECTS.find(s => s.id === entity) || null;
-  const totals = TOTALS;
+  const isDemoCase = activeCase.id === PAYER.payerNo;
+  // case-aware payer identity + totals (demo case = full data; others = proportional split)
+  const activePayer = isDemoCase ? PAYER : { ...PAYER, name: activeCase.name, payerNo: activeCase.id, status: STATUS[activeCase.status].label };
+  const totals = isDemoCase ? TOTALS : (() => {
+    const b = activeCase.balance, nominal = Math.round(b * 0.82), indexation = Math.round(b * 0.05);
+    return { nominal, indexation, interest: b - nominal - indexation, get balance() { return b; } };
+  })();
+  const openCase = (c) => { setActiveCase(c); setEntity("all"); setView("case"); window.scrollTo(0, 0); };
+  const runNba = (c) => { setActiveCase(c); openFlow(c.nba.flow, { balance: c.balance, payerName: c.name, subtitle: `${c.name} · ${c.id}` }); };
 
   // open a guided action flow with payer context
   const openFlow = (id, extra = {}) => setFlow({ id, ctx: {
@@ -139,14 +150,37 @@ function App() {
 
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      <TopBar onCommand={() => setCmdOpen(true)} onNav={(id) => window.muToast({ home: "חזרה לעמוד הבית", back: "ניווט אחורה", forward: "ניווט קדימה", history: "היסטוריית מסכים", fav: "נוסף למועדפים" }[id] || "ניווט", id === "fav" ? "star" : "home")}
-          year={year} breadcrumb={{ name: PAYER.name, no: PAYER.payerNo }}/>
+      <TopBar onCommand={() => setCmdOpen(true)}
+          onNav={(id) => { if (id === "home" || id === "back") { setView("worklist"); return; } window.muToast({ forward: "ניווט קדימה", history: "היסטוריית מסכים", fav: "נוסף למועדפים" }[id] || "ניווט", id === "fav" ? "star" : "home"); }}
+          year={year} breadcrumb={view === "worklist"
+            ? { name: "תור עבודה", no: `${WORKLIST.filter(c => c.status !== "resolved").length} תיקים` }
+            : { name: activePayer.name, no: activePayer.payerNo }}/>
+
+      {view === "worklist" ? (
+        <main id="main" style={{ flex: 1 }}>
+          <Worklist onOpenCase={openCase} onRunNba={runNba}/>
+          <FloatingCopilot onOpen={() => setCopilot(true)} insights={AI_INSIGHTS}/>
+        </main>
+      ) : (
+      <>
+      {/* back-to-queue ribbon */}
+      <div style={{ maxWidth: 1360, margin: "0 auto", width: "100%", padding: "12px 24px 0", boxSizing: "border-box", display: "flex", alignItems: "center", gap: 12 }}>
+        <button data-focusring onClick={() => setView("worklist")}
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid var(--ink-200)", background: "var(--white)",
+            borderRadius: 999, padding: "6px 14px", cursor: "pointer", fontFamily: "var(--font)", fontSize: 13, fontWeight: 600, color: "var(--teal-700)" }}>
+          <Icon name="chevright" size={15} color="var(--teal-600)"/> חזרה לתור העבודה
+        </button>
+        <span style={{ fontSize: 12.5, color: "var(--ink-muted)" }}>
+          תיק <b className="num" style={{ color: "var(--ink-700)" }}>{activePayer.payerNo}</b>
+          {!isDemoCase && <span style={{ marginInlineStart: 8, fontSize: 11, background: "var(--warn-bg)", color: "var(--warn-fg)", borderRadius: 999, padding: "2px 9px", fontWeight: 600 }}>נתוני דמו מוצגים למבנה התיק</span>}
+        </span>
+      </div>
 
       {/* hero atmosphere wash */}
       <div style={{ background: "var(--wash-hero)", borderBottom: "1px solid var(--ink-100)",
-        borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}>
+        borderBottomLeftRadius: 24, borderBottomRightRadius: 24, marginTop: 10 }}>
         <div style={{ maxWidth: 1360, margin: "0 auto", padding: "20px 24px 24px" }}>
-          <HeroZone p={PAYER} totals={totals} year={year} notesCount={notes.length} docsCount={DOCUMENTS.length} insights={AI_INSIGHTS} handlers={handlers} showStrip={ai !== "subtle"} narrow={narrow} onYear={setYear}/>
+          <HeroZone p={activePayer} totals={totals} year={year} notesCount={notes.length} docsCount={DOCUMENTS.length} insights={AI_INSIGHTS} handlers={handlers} showStrip={ai !== "subtle"} narrow={narrow} onYear={setYear}/>
         </div>
       </div>
 
@@ -159,7 +193,7 @@ function App() {
       <main id="main" style={{ flex: 1, maxWidth: 1360, margin: "0 auto", width: "100%", padding: "18px 24px 0", boxSizing: "border-box", scrollMarginTop: 72 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div>
-            <SectionHead title="ישויות ונושאים" sub={`מס׳ משלם ${PAYER.payerNo} · ת.ז ${PAYER.taz}`}/>
+            <SectionHead title="ישויות ונושאים" sub={`מס׳ משלם ${activePayer.payerNo} · ת.ז ${PAYER.taz}`}/>
             <SubjectStrip subjects={SUBJECTS} selected={entity} onSelect={selectSubject}/>
           </div>
           <Card pad={0} style={{ overflow: "visible" }}>
@@ -193,11 +227,18 @@ function App() {
                 onOpenWide={(naxas) => { setWideNaxas(naxas || null); setWideOpen(true); }}/>
             </div>
           </Card>
+
+          {/* case process timeline (live flow events prepend) */}
+          <Card pad={20} style={{ overflow: "visible" }}>
+            <CaseTimeline seed={CASE_TIMELINE} live={caseEvents}/>
+          </Card>
         </div>
 
         {/* floating AI copilot trigger — bottom-left corner */}
         <FloatingCopilot onOpen={() => setCopilot(true)} insights={AI_INSIGHTS}/>
       </main>
+      </>
+      )}
 
       {t.showCityscape ? <FooterBand/> : <div style={{ height: 40 }}/>}
 
