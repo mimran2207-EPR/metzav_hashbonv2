@@ -1,8 +1,81 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Icon } from './icons.jsx';
 import { Chip, Segmented } from './ui.jsx';
 import { fmt, SUBJECT_DETAILS, TXNS, QUICK_ACTIONS } from './data.jsx';
 import s from './ui.module.css';
+
+// ── Shared table utilities ────────────────────────────────────────────────
+
+// useColSort — manages sort column + direction state.
+function useColSort() {
+  const [col, setCol] = useState(null);
+  const [dir, setDir] = useState("asc");
+  const toggle = useCallback((key) => {
+    setCol(prev => { if (prev === key) { setDir(d => d === "asc" ? "desc" : "asc"); return key; } setDir("asc"); return key; });
+  }, []);
+  const sort = useCallback((arr, getVal) => {
+    if (!col || !getVal) return arr;
+    return [...arr].sort((a, b) => {
+      const va = getVal(a, col), vb = getVal(b, col);
+      if (va == null) return 1; if (vb == null) return -1;
+      const cmp = typeof va === "string" ? va.localeCompare(vb, "he") : (va < vb ? -1 : va > vb ? 1 : 0);
+      return dir === "asc" ? cmp : -cmp;
+    });
+  }, [col, dir]);
+  return { sortCol: col, sortDir: dir, toggleSort: toggle, applySort: sort };
+}
+
+// useColOrder — manages drag-to-reorder for N columns.
+function useColOrder(count) {
+  const [order, setOrder] = useState(() => Array.from({ length: count }, (_, i) => i));
+  const dragging = useRef(null);
+  const [dragOver, setDragOver] = useState(null);
+  const handlers = useCallback((i) => ({
+    draggable: true,
+    onDragStart: (e) => { dragging.current = i; e.dataTransfer.effectAllowed = "move"; },
+    onDragOver:  (e) => { e.preventDefault(); setDragOver(i); },
+    onDragLeave: ()  => setDragOver(null),
+    onDrop:      (e) => {
+      e.preventDefault(); setDragOver(null);
+      if (dragging.current === null || dragging.current === i) return;
+      setOrder(prev => {
+        const next = [...prev];
+        const from = next.indexOf(dragging.current);
+        const to   = next.indexOf(i);
+        next.splice(from, 1); next.splice(to, 0, dragging.current);
+        return next;
+      });
+      dragging.current = null;
+    },
+  }), []);
+  return { order, setOrder, dragOver, handlers };
+}
+
+// SortTh — a <th> that is sortable (click) + draggable (drag to reorder).
+function SortTh({ colKey, label, align, sortable, sortCol, sortDir, onSort, dragHandlers, isDragOver, style, children }) {
+  const isSorted = sortable && sortCol === colKey;
+  return (
+    <th onClick={sortable ? () => onSort(colKey) : undefined}
+      {...dragHandlers}
+      style={{ textAlign: align || "start", padding: "9px 10px", fontSize: 11.5, fontWeight: 700,
+        color: "rgba(255,255,255,.95)", whiteSpace: "nowrap", overflow: "hidden",
+        cursor: sortable ? "pointer" : "grab",
+        background: isDragOver ? "rgba(255,255,255,.25)" : "transparent",
+        borderInlineEnd: isDragOver ? "2px solid rgba(255,255,255,.8)" : "2px solid transparent",
+        userSelect: "none", transition: "background .12s",
+        ...style }}>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+        {label || children}
+        {sortable && (
+          <span style={{ fontSize: 9, opacity: isSorted ? 1 : 0.35, color: isSorted ? "#fff" : "rgba(255,255,255,.6)" }}>
+            {isSorted ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}
+          </span>
+        )}
+        {!sortable && <span style={{ fontSize: 9, opacity: 0.3, marginInlineStart: 2 }}>⣿</span>}
+      </span>
+    </th>
+  );
+}
 
 // SubjectCard — one subject in the carousel.
 function SubjectCard({ sub, active, onSelect }) {
@@ -460,13 +533,52 @@ const footCell = { padding: "13px 14px", textAlign: "end", color: "rgba(255,255,
 function TxnTable({ rows, types, compact }) {
   const [q, setQ] = useState("");
   const [dc, setDc] = useState("all");
+  const { sortCol: t3Sort, sortDir: t3Dir, toggleSort: t3Toggle, applySort: t3Apply } = useColSort();
+  const T3_COLS = [
+    { key:"date",  label:"תאריך",       align:"start", sortable:true },
+    { key:"type",  label:"סוג תנועה",   align:"start", sortable:true },
+    { key:"ref",   label:"אסמכתא",      align:"start", sortable:true },
+    { key:"dc",    label:"ז/ח",         align:"center",sortable:true },
+    { key:"nom",   label:"נומינלי",     align:"end",   sortable:true },
+    { key:"addon", label:"הצמדה+ריבית", align:"end",   sortable:true },
+    { key:"bal",   label:"יתרה רצה",    align:"end",   sortable:true },
+  ];
+  const { order: t3Order, dragOver: t3DragOver, handlers: t3DragH } = useColOrder(T3_COLS.length);
+  const orderedT3 = t3Order.map(i => T3_COLS[i]);
+
+  const t3SortVal = (r, key) => {
+    if (key === "date")  { const [d,m,y] = r.date.split("/"); return +new Date(+y, +m-1, +d); }
+    if (key === "type")  return types[r.type] || "";
+    if (key === "ref")   return r.ref || "";
+    if (key === "dc")    return r.dc;
+    if (key === "nom")   return r.nominal || 0;
+    if (key === "addon") return r.addon || 0;
+    if (key === "bal")   return r.bal || 0;
+    return 0;
+  };
+
   const filtered = rows.filter(r => {
     if (dc !== "all" && r.dc !== dc) return false;
     if (q && !(`${types[r.type]} ${r.ref} ${r.date}`.includes(q))) return false;
     return true;
   });
-  const cols = ["תאריך", "סוג תנועה", "אסמכתא", "ז/ח", "נומינלי", "הצמדה+ריבית", "יתרה רצה"];
-  const align = ["start", "start", "start", "center", "end", "end", "end"];
+  const sortedFiltered = t3Apply(filtered, (r, col) => t3SortVal(r, col));
+
+  // Cell renderers per column
+  const t3Cell = (r, key, cp) => {
+    const credit = r.dc === "ז";
+    if (key === "date")  return <td key="date" className="num" style={{ padding:cp, color:"var(--ink-600)", whiteSpace:"nowrap" }}>{r.date}</td>;
+    if (key === "type")  return <td key="type" style={{ padding:cp, color:"var(--ink-800)", fontWeight:500, whiteSpace:"nowrap" }}>{types[r.type]} <span className="num" style={{ color:"var(--ink-400)", fontSize:11 }}>({r.type})</span></td>;
+    if (key === "ref")   return <td key="ref" className="num" style={{ padding:cp, color:"var(--ink-muted)", whiteSpace:"nowrap" }}>{r.ref}</td>;
+    if (key === "dc")    return <td key="dc" style={{ padding:cp, textAlign:"center" }}><span style={{ display:"inline-block", minWidth:20, fontSize:11, fontWeight:700, color:credit?"#1f8a52":"#b23636", background:credit?"#E7F6EE":"#FBE9E9", borderRadius:6, padding:"2px 7px" }}>{r.dc}</span></td>;
+    if (key === "nom")   return <td key="nom" className="num" style={{ padding:cp, textAlign:"end", fontWeight:600, color:credit?"#1f8a52":"var(--ink-800)", whiteSpace:"nowrap" }}>{r.nominal?(credit?"−":"")+"₪"+fmt(r.nominal):"—"}</td>;
+    if (key === "addon") return <td key="addon" className="num" style={{ padding:cp, textAlign:"end", color:"var(--ink-600)", whiteSpace:"nowrap" }}>{r.addon?"₪"+fmt(r.addon):"—"}</td>;
+    if (key === "bal")   return <td key="bal" className="num" style={{ padding:cp, textAlign:"end", fontWeight:700, color:"var(--ink-900)", whiteSpace:"nowrap" }}>₪{fmt(r.bal)}</td>;
+    return <td key={key}/>;
+  };
+
+  const cp = compact ? "6px 12px" : "9px 12px";
+
   return (
     <div style={{ background: "#fff", border: "1px solid var(--ink-200)", borderRadius: 11, overflow: "hidden" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderBottom: "1px solid var(--ink-100)" }}>
@@ -478,7 +590,7 @@ function TxnTable({ rows, types, compact }) {
         </div>
         <Segmented size="sm" value={dc} onChange={setDc} options={[{ value: "all", label: "הכל" }, { value: "ח", label: "חובה" }, { value: "ז", label: "זכות" }]}/>
         <div style={{ flex: 1 }}/>
-        <span style={{ fontSize: 12, color: "var(--ink-muted)" }}><span className="num">{filtered.length}</span> שורות</span>
+        <span style={{ fontSize: 12, color: "var(--ink-muted)" }}><span className="num">{sortedFiltered.length}</span> שורות</span>
         <button data-focusring title="ייצוא" onClick={() => window.muToast("מייצא תנועות ל-Excel", "download")}
           style={{ border: "1px solid var(--ink-200)", background: "#fff", borderRadius: 8, padding: "5px 8px", cursor: "pointer", display: "grid", placeItems: "center" }}>
           <Icon name="download" size={15} color="var(--ink-600)"/>
@@ -486,36 +598,23 @@ function TxnTable({ rows, types, compact }) {
       </div>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
         <thead>
-          <tr style={{ background: "var(--ink-50)", position: "sticky", top: 0 }}>{cols.map((c, i) => <th key={i} style={{ textAlign: align[i], padding: "8px 12px", fontSize: 13, fontWeight: 600, color: "var(--ink-muted)", borderBottom: "1px solid var(--ink-200)", whiteSpace: "nowrap" }}>{c}</th>)}</tr>
+          <tr style={{ background: "linear-gradient(135deg,var(--teal-700),var(--teal-800))", position: "sticky", top: 0 }}>
+            {orderedT3.map((c, ci) => (
+              <SortTh key={c.key} colKey={c.key} label={c.label} align={c.align}
+                sortable={c.sortable} sortCol={t3Sort} sortDir={t3Dir} onSort={t3Toggle}
+                dragHandlers={t3DragH(t3Order[ci])} isDragOver={t3DragOver === t3Order[ci]}/>
+            ))}
+          </tr>
         </thead>
         <tbody>
-          {filtered.length === 0 && (
+          {sortedFiltered.length === 0 && (
             <tr><td colSpan={7} style={{ padding: "26px", textAlign: "center", color: "var(--ink-400)", fontSize: 13 }}>אין תנועות התואמות לסינון</td></tr>
           )}
-          {filtered.map((r, i) => {
-            const credit = r.dc === "ז";
-            return (
-              <tr key={i} className={s.txRow} style={{ borderBottom: "1px solid var(--ink-50)" }}>
-                <td className="num" style={{ padding: compact ? "6px 12px" : "9px 12px", color: "var(--ink-600)", whiteSpace: "nowrap" }}>{r.date}</td>
-                <td style={{ padding: compact ? "6px 12px" : "9px 12px", color: "var(--ink-800)", fontWeight: 500, whiteSpace: "nowrap" }}>
-                  {types[r.type]} <span className="num" style={{ color: "var(--ink-400)", fontSize: 11 }}>({r.type})</span>
-                </td>
-                <td className="num" style={{ padding: compact ? "6px 12px" : "9px 12px", color: "var(--ink-muted)", whiteSpace: "nowrap" }}>{r.ref}</td>
-                <td style={{ padding: compact ? "6px 12px" : "9px 12px", textAlign: "center" }}>
-                  <span style={{ display: "inline-block", minWidth: 20, fontSize: 11, fontWeight: 700, color: credit ? "#1f8a52" : "#b23636",
-                    background: credit ? "#E7F6EE" : "#FBE9E9", borderRadius: 6, padding: "2px 7px" }}>{r.dc}</span>
-                </td>
-                <td className="num" style={{ padding: compact ? "6px 12px" : "9px 12px", textAlign: "end", fontWeight: 600,
-                  color: credit ? "#1f8a52" : "var(--ink-800)", whiteSpace: "nowrap" }}>
-                  {r.nominal ? (credit ? "−" : "") + "₪" + fmt(r.nominal) : "—"}
-                </td>
-                <td className="num" style={{ padding: compact ? "6px 12px" : "9px 12px", textAlign: "end", color: "var(--ink-600)", whiteSpace: "nowrap" }}>
-                  {r.addon ? "₪" + fmt(r.addon) : "—"}
-                </td>
-                <td className="num" style={{ padding: compact ? "6px 12px" : "9px 12px", textAlign: "end", fontWeight: 700, color: "var(--ink-900)", whiteSpace: "nowrap" }}>₪{fmt(r.bal)}</td>
-              </tr>
-            );
-          })}
+          {sortedFiltered.map((r, i) => (
+            <tr key={i} className={s.txRow} style={{ borderBottom: "1px solid var(--ink-50)" }}>
+              {orderedT3.map(col => t3Cell(r, col.key, cp))}
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
@@ -712,148 +811,188 @@ function AllEntitiesView({ subjects, filterSubject, density, txnTypes, onAction,
     else { setOpenEntity(id); setOpenCharge(null); }
   };
 
-  // Column definitions — table-layout:fixed so every column stays its width.
-  // Widths are px (set on <col> elements); "auto" spreads the remaining space.
-  const COLS = [
-    { label: "רץ",          w: "40px",   align: "center" },
-    { label: "נושא",        w: "52px",   align: "center" },
-    { label: "מס' מזהה",   w: "96px",   align: "end" },
-    { label: "תיאור נושא",  w: "130px",  align: "start" },
-    { label: "פרטי אב",     w: "auto",   align: "start" },
-    { label: "סוגי נכס",    w: "80px",   align: "center" },
-    { label: "מחזיק נוכחי", w: "88px",   align: "center" },
-    { label: "יתרה",         w: "110px",  align: "end" },
-    { label: "מסמכים",       w: "72px",   align: "center" },
-    { label: "",             w: "40px",   align: "center" },
+  // ── Level 1 sort + drag ──
+  const { sortCol, sortDir, toggleSort, applySort } = useColSort();
+  // ── Level 2 sort + drag ──
+  const { sortCol: l2SortCol, sortDir: l2SortDir, toggleSort: l2Toggle, applySort: l2Sort } = useColSort();
+  const L2_MID = [
+    { key:"idx2",  label:"רץ",          align:"center", sortable:false },
+    { key:"code",  label:"שירות",       align:"center", sortable:true },
+    { key:"name",  label:"תיאור שירות", align:"start",  sortable:true },
+    { key:"src",   label:"ש.מקור",      align:"center", sortable:true },
+    { key:"disc",  label:"הנחה",        align:"center", sortable:true },
+    { key:"dname", label:"תיאור הנחה",  align:"start",  sortable:false },
+    { key:"arr",   label:"הסדר",        align:"center", sortable:true },
+    { key:"aname", label:"תיאור הסדר",  align:"start",  sortable:false },
+    { key:"track", label:"מעקב",        align:"center", sortable:false },
+    { key:"paid",  label:"תשלומים",     align:"end",    sortable:true },
+    { key:"charg", label:"חיובים",      align:"end",    sortable:true },
+    { key:"bal",   label:"יתרה",        align:"end",    sortable:true },
   ];
+  const { order: l2ColOrder, dragOver: l2DragOver, handlers: l2DragH } = useColOrder(L2_MID.length);
+  const l2OrderedMid = l2ColOrder.map(i => L2_MID[i]);
+  const l2ColCount = 1 + L2_MID.length; // expand + mid
+
+  // Level 2 sort value getter
+  const l2SortVal = (c, rows, key) => {
+    if (key === "code")  return c.code || 0;
+    if (key === "name")  return c.name || "";
+    if (key === "src")   return c.srcYear || 0;
+    if (key === "disc")  return c.discount || 0;
+    if (key === "arr")   return c.arrangement || 0;
+    if (key === "paid")  return rows.filter(r => r.dc === "ז").reduce((a,r) => a + (r.nominal||r.addon||0), 0);
+    if (key === "charg") return rows.filter(r => r.dc === "ח").reduce((a,r) => a + (r.nominal||r.addon||0), 0);
+    if (key === "bal")   return chargeBalance(c);
+    return 0;
+  };
+
+  // Draggable middle columns (idx fixed-left, expand fixed-right)
+  const L1_MID = [
+    { key: "code",   label: "נושא",        w: "52px",  align: "center", sortable: true },
+    { key: "id",     label: "מס' מזהה",   w: "96px",  align: "end",    sortable: true },
+    { key: "name",   label: "תיאור נושא",  w: "130px", align: "start",  sortable: true },
+    { key: "meta",   label: "פרטי אב",     w: "auto",  align: "start",  sortable: true },
+    { key: "types",  label: "סוגי נכס",    w: "80px",  align: "center", sortable: true },
+    { key: "holder", label: "מחזיק נוכחי", w: "88px",  align: "center", sortable: false },
+    { key: "bal",    label: "יתרה",         w: "110px", align: "end",    sortable: true },
+    { key: "docs",   label: "מסמכים",       w: "72px",  align: "center", sortable: false },
+  ];
+  const { order: colOrder, dragOver: l1DragOver, handlers: l1DragH } = useColOrder(L1_MID.length);
+  const orderedMid = colOrder.map(i => L1_MID[i]);
+  const allCols = [{ key:"idx", label:"רץ", w:"40px", align:"center" }, ...orderedMid, { key:"expand", label:"", w:"40px", align:"center" }];
+  const colCount = allCols.length;
+
+  // Sort logic for level-1 entities
+  const l1SortVal = (e, key) => {
+    if (key === "code") return e.subject.code || 0;
+    if (key === "id")   return parseInt(e.id.replace(/\D/g,"")) || 0;
+    if (key === "name") return e.subject.name || "";
+    if (key === "meta") return e.name || "";
+    if (key === "types") return (e.propertyTypes || []).length;
+    if (key === "bal")  return e.charges.reduce((a, c) => a + chargeBalance(c), 0);
+    return 0;
+  };
+  const sortedEntities = applySort(entities, (e, col) => l1SortVal(e, col));
+
+  // Cell renderer per column key
+  const cellOf = {
+    idx:    (entity, i) => <td key="idx" className="num" style={{ padding: cellPad, textAlign: "center", color: "var(--ink-400)", fontSize: 11, fontWeight: 600 }}>{i + 1}</td>,
+    code:   (entity, i, isOpen) => (
+      <td key="code" style={{ padding: cellPad, textAlign: "center" }}>
+        <span className="num" style={{ background: isOpen ? "var(--teal-100)" : "var(--ink-100)", color: isOpen ? "var(--teal-800)" : "var(--ink-600)", borderRadius: 5, padding: "2px 8px", fontSize: 12, fontWeight: 700 }}>
+          {String(entity.subject.code || "—").padStart(2, "0")}
+        </span>
+      </td>),
+    id:     (entity, i, isOpen) => (
+      <td key="id" className="num" style={{ padding: cellPad, textAlign: "end", fontWeight: 700, color: isOpen ? "var(--teal-700)" : "var(--ink-700)" }}>
+        {entity.id.replace(/\D/g,"") || entity.id}
+      </td>),
+    name:   (entity, i, isOpen) => (
+      <td key="name" style={{ padding: cellPad }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 7, overflow: "hidden" }}>
+          <div style={{ width: 24, height: 24, borderRadius: 6, flex: "none", display: "grid", placeItems: "center", background: "linear-gradient(135deg,var(--teal-400),var(--teal-600))" }}>
+            <Icon name={entity.subject.icon} size={12} color="#fff"/>
+          </div>
+          <span style={{ fontWeight: 600, color: "var(--ink-800)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{entity.subject.name}</span>
+        </div>
+      </td>),
+    meta:   (entity) => (
+      <td key="meta" style={{ padding: cellPad }}>
+        <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--ink-muted)", fontSize: 12 }}>
+          {entity.name}{entity.meta && entity.meta !== entity.subject.name ? ` · ${entity.meta}` : ""}
+        </div>
+      </td>),
+    types:  (entity) => (
+      <td key="types" style={{ padding: cellPad, textAlign: "center" }}>
+        <button onClick={e => { e.stopPropagation(); setTypesModal(entity); }} title="הצג סוגי נכס"
+          style={{ display: "inline-flex", alignItems: "center", gap: 4,
+            border: entity.propertyTypes.length ? "1px solid var(--teal-200)" : "1px solid var(--ink-200)",
+            background: entity.propertyTypes.length ? "var(--teal-50)" : "var(--ink-50)",
+            color: entity.propertyTypes.length ? "var(--teal-700)" : "var(--ink-400)",
+            borderRadius: 6, padding: "3px 9px", cursor: "pointer", fontFamily: "var(--font)", fontSize: 12, fontWeight: 600 }}>
+          <span className="num">{entity.propertyTypes.length || "—"}</span>
+          {entity.propertyTypes.length > 0 && <Icon name="chevdown" size={11} color="var(--teal-500)"/>}
+        </button>
+      </td>),
+    holder: (entity) => {
+      const current = entity.holders.find(h => h.current);
+      const hasH = entity.holders.length > 0;
+      return (
+        <td key="holder" style={{ padding: cellPad, textAlign: "center" }}>
+          <button onClick={e => { e.stopPropagation(); if (hasH) setHoldersModal(entity); }}
+            aria-label={current ? `${current.name} — לחץ לפרטים` : "ללא מחזיק נוכחי"}
+            style={{ width: 32, height: 32, display: "grid", placeItems: "center",
+              border: current ? "1.5px solid var(--ok-fg)" : "1.5px solid var(--ink-300)",
+              background: current ? "var(--ok-bg)" : "transparent",
+              borderRadius: 8, cursor: hasH ? "pointer" : "default", transition: "all .13s" }}>
+            {current ? <span style={{ fontSize: 16, color: "var(--ok-fg)", fontWeight: 800, lineHeight: 1 }}>✓</span>
+              : <Icon name="history" size={14} color="var(--ink-400)"/>}
+          </button>
+        </td>);},
+    bal:    (entity, i, isOpen) => {
+      const bal = entity.charges.reduce((a, c) => a + chargeBalance(c), 0);
+      return (
+        <td key="bal" className="num" style={{ padding: cellPad, textAlign: "end", fontWeight: 700, color: bal > 0 ? "var(--ink-900)" : "var(--ok-fg)" }}>
+          {bal > 0 ? `₪${fmt(bal)}` : "0 ✓"}
+        </td>);},
+    docs:   (entity) => {
+      const btns = [{ icon: "docs", label: "מסמכים" }, { icon: "notes", label: "הערות" }];
+      return (
+        <td key="docs" style={{ padding: cellPad, textAlign: "center" }}>
+          <div style={{ display: "flex", justifyContent: "center", gap: 4 }}>
+            {btns.map(btn => (
+              <button key={btn.icon} onClick={e => { e.stopPropagation(); onAction && onAction({ id: btn.icon, label: btn.label }); }}
+                title={btn.label} style={{ width: 24, height: 24, display: "grid", placeItems: "center",
+                  border: "1px solid var(--ink-200)", background: "var(--white)", borderRadius: 6, cursor: "pointer" }}>
+                <Icon name={btn.icon} size={12} color="var(--ink-500)"/>
+              </button>
+            ))}
+          </div>
+        </td>);},
+    expand: (entity, i, isOpen) => (
+      <td key="expand" style={{ padding: cellPad, textAlign: "center" }}>
+        <Icon name="chevdown" size={15} color="var(--ink-400)"
+          style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform .2s", display: "block", margin: "0 auto" }}/>
+      </td>),
+  };
 
   return (
     <>
     <div style={{ overflowX: "auto", borderRadius: 12, border: "1px solid var(--ink-200)" }}>
       <table style={{ width: "100%", minWidth: 860, borderCollapse: "collapse", fontSize: 13, tableLayout: "fixed" }}>
         <colgroup>
-          {COLS.map((c, i) => <col key={i} style={{ width: c.w === "auto" ? undefined : c.w }}/>)}
+          {allCols.map((c, i) => <col key={i} style={{ width: c.w === "auto" ? undefined : c.w }}/>)}
         </colgroup>
         <thead>
           <tr style={{ background: "linear-gradient(135deg,var(--teal-700),var(--teal-800))", position: "sticky", top: 0, zIndex: 2 }}>
-            {COLS.map((c, i) => (
-              <th key={i} style={{ textAlign: c.align, padding: "10px 12px", fontSize: 12, fontWeight: 700,
-                color: "rgba(255,255,255,.95)", whiteSpace: "nowrap", overflow: "hidden" }}>
-                {c.label}
-              </th>
+            <th style={{ textAlign:"center", padding:"10px 10px", fontSize:11.5, fontWeight:700, color:"rgba(255,255,255,.95)", whiteSpace:"nowrap" }}>רץ</th>
+            {orderedMid.map((c, ci) => (
+              <SortTh key={c.key} colKey={c.key} label={c.label} align={c.align}
+                sortable={c.sortable} sortCol={sortCol} sortDir={sortDir} onSort={toggleSort}
+                dragHandlers={l1DragH(colOrder[ci])} isDragOver={l1DragOver === colOrder[ci]}/>
             ))}
+            <th style={{ width:"40px" }}/>
           </tr>
         </thead>
         <tbody>
-          {entities.map((entity, i) => {
+          {sortedEntities.map((entity, i) => {
             const isOpen = openEntity === entity.id;
-            const entityBalance = entity.charges.reduce((a, c) => a + chargeBalance(c), 0);
-            const isPaid = entityBalance === 0;
             const rowBg = isOpen ? "var(--teal-50)" : i % 2 === 0 ? "#fff" : "var(--ink-50)";
 
             return (
               <React.Fragment key={entity.id}>
-                {/* ── Level 1: entity row ── */}
+                {/* ── Level 1: entity row — cells rendered via cellOf in colOrder ── */}
                 <tr onClick={() => toggleEntity(entity.id)}
                   style={{ cursor: "pointer", background: rowBg, borderBottom: "1px solid var(--ink-100)", transition: "background .12s" }}>
-
-                  {/* רץ */}
-                  <td className="num" style={{ padding: cellPad, textAlign: "center", color: "var(--ink-400)", fontWeight: 600, fontSize: 12 }}>
-                    {i + 1}
-                  </td>
-                  {/* נושא code */}
-                  <td style={{ padding: cellPad, textAlign: "center" }}>
-                    <span className="num" style={{ background: isOpen ? "var(--teal-100)" : "var(--ink-100)",
-                      color: isOpen ? "var(--teal-800)" : "var(--ink-600)", borderRadius: 5, padding: "2px 8px", fontSize: 12, fontWeight: 700 }}>
-                      {String(entity.subject.code || "—").padStart(2, "0")}
-                    </span>
-                  </td>
-                  {/* מס' מזהה — numeric only, right-aligned */}
-                  <td className="num" style={{ padding: cellPad, textAlign: "end", fontWeight: 700,
-                    color: isOpen ? "var(--teal-700)" : "var(--ink-700)", letterSpacing: ".01em" }}>
-                    {entity.id.replace(/\D/g, "") || entity.id}
-                  </td>
-                  {/* תיאור נושא */}
-                  <td style={{ padding: cellPad }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 7, overflow: "hidden" }}>
-                      <div style={{ width: 24, height: 24, borderRadius: 6, flex: "none", display: "grid", placeItems: "center",
-                        background: "linear-gradient(135deg,var(--teal-400),var(--teal-600))" }}>
-                        <Icon name={entity.subject.icon} size={12} color="#fff"/>
-                      </div>
-                      <span style={{ fontWeight: 600, color: "var(--ink-800)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {entity.subject.name}
-                      </span>
-                    </div>
-                  </td>
-                  {/* פרטי אב */}
-                  <td style={{ padding: cellPad }}>
-                    <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                      color: "var(--ink-muted)", fontSize: 12 }}>
-                      {entity.name}{entity.meta && entity.meta !== entity.subject.name ? ` · ${entity.meta}` : ""}
-                    </div>
-                  </td>
-                  {/* סוגי נכס — clickable, opens property-types modal */}
-                  <td style={{ padding: cellPad, textAlign: "center" }}>
-                    <button onClick={e => { e.stopPropagation(); setTypesModal(entity); }}
-                      title="הצג סוגי נכס"
-                      style={{ display: "inline-flex", alignItems: "center", gap: 4,
-                        border: entity.propertyTypes.length ? "1px solid var(--teal-200)" : "1px solid var(--ink-200)",
-                        background: entity.propertyTypes.length ? "var(--teal-50)" : "var(--ink-50)",
-                        color: entity.propertyTypes.length ? "var(--teal-700)" : "var(--ink-400)",
-                        borderRadius: 6, padding: "3px 9px", cursor: "pointer", fontFamily: "var(--font)",
-                        fontSize: 12, fontWeight: 600 }}>
-                      <span className="num">{entity.propertyTypes.length || "—"}</span>
-                      {entity.propertyTypes.length > 0 && <Icon name="chevdown" size={11} color="var(--teal-500)"/>}
-                    </button>
-                  </td>
-                  {/* מחזיק נוכחי — ✓ only when active holder exists; click always opens modal */}
-                  {(() => {
-                    const current = entity.holders.find(h => h.current);
-                    const hasHolders = entity.holders.length > 0;
-                    return (
-                      <td style={{ padding: cellPad, textAlign: "center" }}>
-                        <button onClick={e => { e.stopPropagation(); if (hasHolders) setHoldersModal(entity); }}
-                          aria-label={current ? `מחזיק נוכחי: ${current.name} — לחץ לפרטים` : "ללא מחזיק נוכחי — לחץ להיסטוריה"}
-                          style={{ width: 32, height: 32, display: "grid", placeItems: "center",
-                            border: current ? "1.5px solid var(--ok-fg)" : "1.5px solid var(--ink-300)",
-                            background: current ? "var(--ok-bg)" : "transparent",
-                            borderRadius: 8, cursor: hasHolders ? "pointer" : "default",
-                            transition: "all .13s ease" }}>
-                          {current
-                            ? <span style={{ fontSize: 16, color: "var(--ok-fg)", fontWeight: 800, lineHeight: 1 }}>✓</span>
-                            : <Icon name="history" size={14} color="var(--ink-400)"/>}
-                        </button>
-                      </td>
-                    );
-                  })()}
-                  {/* יתרה */}
-                  <td className="num" style={{ padding: cellPad, textAlign: "end", fontWeight: 700,
-                    color: isPaid ? "transparent" : "var(--ink-900)" }}>
-                    {isPaid ? "" : `₪${fmt(entityBalance)}`}
-                  </td>
-                  {/* מסמכים */}
-                  <td style={{ padding: cellPad, textAlign: "center" }}>
-                    <div style={{ display: "flex", gap: 4, justifyContent: "center" }}>
-                      {[{ icon: "docs", tip: "מסמכים" }, { icon: "notes", tip: "הערות" }].map(btn => (
-                        <button key={btn.icon} onClick={e => { e.stopPropagation(); window.muToast(btn.tip, btn.icon); }}
-                          style={{ width: 26, height: 26, display: "grid", placeItems: "center",
-                            border: "1px solid var(--ink-200)", background: "var(--white)", borderRadius: 6, cursor: "pointer" }}>
-                          <Icon name={btn.icon} size={12} color="var(--ink-500)"/>
-                        </button>
-                      ))}
-                    </div>
-                  </td>
-                  {/* expand */}
-                  <td style={{ padding: cellPad, textAlign: "center" }}>
-                    <Icon name="chevdown" size={15} color="var(--ink-400)"
-                      style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform .2s", display: "block", margin: "0 auto" }}/>
-                  </td>
+                  {cellOf.idx(entity, i)}
+                  {orderedMid.map(c => cellOf[c.key](entity, i, isOpen))}
+                  {cellOf.expand(entity, i, isOpen)}
                 </tr>
 
                 {/* ── Level 2: full-width sub-panel (legacy-style) ── */}
                 {isOpen && (
                   <tr>
-                    <td colSpan={COLS.length} style={{ padding: 0, borderBottom: "2px solid var(--teal-500)" }}>
+                    <td colSpan={colCount} style={{ padding: 0, borderBottom: "2px solid var(--teal-500)" }}>
                       <div className="mu-rise" style={{ background: "#fafcfd" }}>
 
                         {/* Sub-header: entity identity + action toolbar */}
@@ -913,17 +1052,23 @@ function AllEntitiesView({ subjects, filterSubject, density, txnTypes, onAction,
                             </colgroup>
                             <thead>
                               <tr style={{ background: "var(--ink-100)", borderBottom: "1px solid var(--ink-200)" }}>
-                                {["", "רץ", "שירות", "תיאור שירות", "ש.מקור", "הנחה", "תיאור הנחה", "הסדר", "תיאור הסדר", "מעקב", "תשלומים", "חיובים", "יתרה"].map((h, j) => (
-                                  <th key={j} style={{ padding: "7px 10px", fontSize: 11.5, fontWeight: 700,
-                                    color: "var(--ink-600)", whiteSpace: "nowrap", overflow: "hidden",
-                                    textAlign: j >= 10 ? "end" : j === 0 || j === 9 ? "center" : "start" }}>
-                                    {h}
-                                  </th>
+                                <th style={{ width:36, padding:"7px 8px" }}/>{/* expand — fixed */}
+                                {l2OrderedMid.map((c, ci) => (
+                                  <SortTh key={c.key} colKey={c.key} label={c.label} align={c.align}
+                                    sortable={c.sortable} sortCol={l2SortCol} sortDir={l2SortDir} onSort={l2Toggle}
+                                    dragHandlers={l2DragH(l2ColOrder[ci])} isDragOver={l2DragOver === l2ColOrder[ci]}
+                                    style={{ background:"transparent", color:"var(--ink-700)", borderInlineEnd: l2DragOver === l2ColOrder[ci] ? "2px solid var(--teal-400)" : "2px solid transparent" }}/>
                                 ))}
                               </tr>
                             </thead>
                             <tbody>
-                              {entity.charges.map((c, ci) => {
+                              {(() => {
+                                // Sort charges for Level 2
+                                const sorted2 = l2SortCol ? l2Sort(entity.charges, (c, key) => {
+                                  const rows = c.txns ? (TXNS[c.txns] || []) : [];
+                                  return l2SortVal(c, rows, key);
+                                }) : entity.charges;
+                                return sorted2.map((c, ci) => {
                                 const txnRows = c.txns ? (TXNS[c.txns] || []) : [];
                                 const bal = chargeBalance(c);
                                 const paid = txnRows.filter(r => r.dc === "ז").reduce((a, r) => a + (r.nominal || r.addon || 0), 0);
@@ -931,57 +1076,31 @@ function AllEntitiesView({ subjects, filterSubject, density, txnTypes, onAction,
                                 const isChargeOpen = openCharge === c.id;
                                 const hasTxns = txnRows.length > 0;
                                 const rowBg = isChargeOpen ? "var(--teal-50)" : ci % 2 === 0 ? "#fff" : "var(--ink-50)";
+                                // Cell renderer for L2
+                                const l2Cell = {
+                                  idx2:  () => <td key="idx2" className="num" style={{ padding:"8px 10px", textAlign:"center", color:"var(--ink-400)", fontSize:11 }}>{ci + 1}</td>,
+                                  code:  () => <td key="code" style={{ padding:"8px 10px", textAlign:"center" }}><span className="num" style={{ background:"var(--teal-50)", color:"var(--teal-700)", borderRadius:5, padding:"1px 7px", fontSize:11, fontWeight:700 }}>{String(c.code || ci+1).padStart(2,"0")}</span></td>,
+                                  name:  () => <td key="name" style={{ padding:"8px 10px", fontWeight:600, color:isChargeOpen?"var(--teal-700)":"var(--ink-800)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.name}</td>,
+                                  src:   () => <td key="src" className="num" style={{ padding:"8px 10px", textAlign:"center", color:"var(--ink-muted)", fontSize:11 }}>{c.srcYear||"—"}</td>,
+                                  disc:  () => <td key="disc" className="num" style={{ padding:"8px 10px", textAlign:"center", color:c.discount?"var(--ok-fg)":"var(--ink-300)", fontWeight:c.discount?700:400 }}>{c.discount?`${c.discount}%`:"—"}</td>,
+                                  dname: () => <td key="dname" style={{ padding:"8px 10px", color:"var(--ink-muted)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", fontSize:11 }}>{c.discountDesc||""}</td>,
+                                  arr:   () => <td key="arr" className="num" style={{ padding:"8px 10px", textAlign:"center", color:c.arrangement?"var(--warn-fg)":"var(--ink-300)", fontWeight:c.arrangement?700:400 }}>{c.arrangement?`${c.arrangement}%`:"—"}</td>,
+                                  aname: () => <td key="aname" style={{ padding:"8px 10px", color:"var(--ink-muted)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", fontSize:11 }}>{c.arrangementDesc||""}</td>,
+                                  track: () => <td key="track" style={{ padding:"8px 10px", textAlign:"center" }}>{c.tracking&&<span style={{ color:"var(--ok-fg)", fontWeight:700, fontSize:14 }}>✓</span>}</td>,
+                                  paid:  () => <td key="paid" className="num" style={{ padding:"8px 10px", textAlign:"end", color:"var(--ok-fg)", fontWeight:600 }}>{paid>0?fmt(paid):"—"}</td>,
+                                  charg: () => <td key="charg" className="num" style={{ padding:"8px 10px", textAlign:"end", color:"var(--ink-700)", fontWeight:600 }}>{charged>0?fmt(charged):"—"}</td>,
+                                  bal:   () => <td key="bal" className="num" style={{ padding:"8px 10px", textAlign:"end", fontWeight:700, color:bal>0?"var(--red)":"var(--ok-fg)" }}>{bal>0?fmt(bal):"0 ✓"}</td>,
+                                };
                                 return (
                                   <React.Fragment key={c.id}>
                                     <tr onClick={() => hasTxns && setOpenCharge(isChargeOpen ? null : c.id)}
-                                      style={{ cursor: hasTxns ? "pointer" : "default",
-                                        background: rowBg, borderBottom: "1px solid var(--ink-100)", transition: "background .12s" }}>
-                                      {/* expand */}
-                                      <td style={{ textAlign: "center", padding: "8px 6px" }}>
+                                      style={{ cursor: hasTxns ? "pointer" : "default", background: rowBg, borderBottom: "1px solid var(--ink-100)", transition: "background .12s" }}>
+                                      {/* expand — fixed left */}
+                                      <td style={{ textAlign:"center", padding:"8px 6px" }}>
                                         {hasTxns && <Icon name="chevdown" size={13} color="var(--ink-400)"
-                                          style={{ display: "block", margin: "0 auto", transform: isChargeOpen ? "rotate(180deg)" : "none", transition: "transform .18s" }}/>}
+                                          style={{ display:"block", margin:"0 auto", transform:isChargeOpen?"rotate(180deg)":"none", transition:"transform .18s" }}/>}
                                       </td>
-                                      {/* רץ */}
-                                      <td className="num" style={{ padding: "8px 10px", textAlign: "center", color: "var(--ink-400)", fontSize: 11 }}>{ci + 1}</td>
-                                      {/* שירות code */}
-                                      <td style={{ padding: "8px 10px", textAlign: "center" }}>
-                                        <span className="num" style={{ background: "var(--teal-50)", color: "var(--teal-700)", borderRadius: 5, padding: "1px 7px", fontSize: 11, fontWeight: 700 }}>
-                                          {String(c.code || ci + 1).padStart(2, "0")}
-                                        </span>
-                                      </td>
-                                      {/* תיאור שירות */}
-                                      <td style={{ padding: "8px 10px", fontWeight: 600, color: isChargeOpen ? "var(--teal-700)" : "var(--ink-800)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</td>
-                                      {/* ש.מקור */}
-                                      <td className="num" style={{ padding: "8px 10px", textAlign: "center", color: "var(--ink-muted)", fontSize: 11 }}>{c.srcYear || "—"}</td>
-                                      {/* הנחה */}
-                                      <td className="num" style={{ padding: "8px 10px", textAlign: "center", color: c.discount ? "var(--ok-fg)" : "var(--ink-300)", fontWeight: c.discount ? 700 : 400 }}>
-                                        {c.discount ? `${c.discount}%` : "—"}
-                                      </td>
-                                      {/* תיאור הנחה */}
-                                      <td style={{ padding: "8px 10px", color: "var(--ink-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 11 }}>{c.discountDesc || ""}</td>
-                                      {/* הסדר */}
-                                      <td className="num" style={{ padding: "8px 10px", textAlign: "center", color: c.arrangement ? "var(--warn-fg)" : "var(--ink-300)", fontWeight: c.arrangement ? 700 : 400 }}>
-                                        {c.arrangement ? `${c.arrangement}%` : "—"}
-                                      </td>
-                                      {/* תיאור הסדר */}
-                                      <td style={{ padding: "8px 10px", color: "var(--ink-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 11 }}>{c.arrangementDesc || ""}</td>
-                                      {/* מעקב */}
-                                      <td style={{ padding: "8px 10px", textAlign: "center" }}>
-                                        {c.tracking && <span style={{ color: "var(--ok-fg)", fontWeight: 700, fontSize: 14 }}>✓</span>}
-                                      </td>
-                                      {/* תשלומים */}
-                                      <td className="num" style={{ padding: "8px 10px", textAlign: "end", color: "var(--ok-fg)", fontWeight: 600 }}>
-                                        {paid > 0 ? fmt(paid) : "—"}
-                                      </td>
-                                      {/* חיובים */}
-                                      <td className="num" style={{ padding: "8px 10px", textAlign: "end", color: "var(--ink-700)", fontWeight: 600 }}>
-                                        {charged > 0 ? fmt(charged) : "—"}
-                                      </td>
-                                      {/* יתרה */}
-                                      <td className="num" style={{ padding: "8px 10px", textAlign: "end", fontWeight: 700,
-                                        color: bal > 0 ? "var(--red)" : "var(--ok-fg)" }}>
-                                        {bal > 0 ? fmt(bal) : "0 ✓"}
-                                      </td>
+                                      {l2OrderedMid.map(col => l2Cell[col.key]())}
                                     </tr>
                                     {/* ── Level 3: transactions inline ── */}
                                     {isChargeOpen && (
@@ -995,7 +1114,7 @@ function AllEntitiesView({ subjects, filterSubject, density, txnTypes, onAction,
                                     )}
                                   </React.Fragment>
                                 );
-                              })}
+                              });})()}
                             </tbody>
                           </table>
                         </div>
