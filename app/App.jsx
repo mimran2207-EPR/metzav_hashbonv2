@@ -6,6 +6,7 @@ import { SubjectStrip, AllEntitiesView } from './content.jsx';
 import { FloatingCopilot, CommandBar } from './panels.jsx';
 import { CopilotPanel, NotesDrawer, DocsDrawer, InterestCalc } from './panels2.jsx';
 import { WideTxnScreen } from './wide-txns.jsx';
+import { FlowHost } from './flows.jsx';
 import { useTweaks, TweaksPanel, TweakSection, TweakRadio, TweakColor, TweakToggle } from './tweaks-panel.jsx';
 import { SectionHead, Card, Segmented, ToastHost, useMediaQuery } from './ui.jsx';
 import { Icon } from './icons.jsx';
@@ -43,6 +44,8 @@ function App() {
   const [wideOpen, setWideOpen] = useState(false);
   const [wideNaxas, setWideNaxas] = useState(null);
   const [themeId, setThemeId] = usePersistedState("themeId", "teal");
+  const [flow, setFlow] = useState(null);          // {id, ctx} active action flow
+  const [caseEvents, setCaseEvents] = useState([]); // case timeline events
 
   // Apply color theme dynamically (preset themes); custom handled below
   useEffect(() => {
@@ -77,11 +80,25 @@ function App() {
   const activeSubject = SUBJECTS.find(s => s.id === entity) || null;
   const totals = TOTALS;
 
+  // open a guided action flow with payer context
+  const openFlow = (id, extra = {}) => setFlow({ id, ctx: {
+    balance: totals.balance, payerName: PAYER.name,
+    subtitle: `${PAYER.name} · ${PAYER.payerNo}`, ...extra } });
+
+  // a flow finished → record a case-timeline event + note + toast
+  const completeFlow = (ev) => {
+    const now = new Date();
+    const stamp = now.toLocaleDateString("he-IL") + " " + now.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
+    setCaseEvents(prev => [{ ...ev, id: now.getTime(), time: stamp }, ...prev]);
+    addNote(`${ev.title} — ${ev.detail}`);
+    window.muToast(ev.title, ev.icon, ev.tone === "crit" ? "error" : ev.tone === "warn" ? "warn" : "success");
+  };
+
   const handlers = {
-    onPay: () => window.muToast("מעבר למסך גביית תשלום / קבלה", "card"),
+    onPay: () => openFlow("payment"),
     onNotes: () => setNotesOpen(true),
     onDocs: () => setDocsOpen(true),
-    onEnforce: () => window.muToast("מעבר למסך פעולות אכיפה", "shield"),
+    onEnforce: () => openFlow("enforce"),
     onCopilot: () => setCopilot(true),
     onCalc: () => setCalcOpen(true),
   };
@@ -89,20 +106,33 @@ function App() {
   const runCommand = (item) => {
     setCmdOpen(false);
     const map = {
-      pay: handlers.onPay, calc: () => setCalcOpen(true), print: () => window.muToast("מכין הדפסת מצב חשבון…", "print"),
-      enforce: handlers.onEnforce, notes: () => setNotesOpen(true), docs: () => setDocsOpen(true),
-      letter: () => setCopilot(true), arrangement: () => window.muToast("נפתח מסך הסדר תשלומים", "wallet"),
+      pay: () => openFlow("payment"), calc: () => setCalcOpen(true), print: () => window.muToast("מכין הדפסת מצב חשבון…", "print"),
+      enforce: () => openFlow("enforce"), notes: () => setNotesOpen(true), docs: () => setDocsOpen(true),
+      letter: () => openFlow("letter"), arrangement: () => openFlow("arrangement"),
     };
     if (map[item.id]) map[item.id]();
     else window.muToast("נבחר: " + item.label);
   };
 
+  // route every action id (quick-actions + L2 toolbar icons) to a real flow
+  const ACTION_TO_FLOW = {
+    update_arrangement: "arrangement", arrangement: "arrangement", card: "arrangement",
+    credit_charge: "credit", receipt: "credit",
+    discounts: "discount", wallet: "discount",
+    swap_holders: "holder", user: "holder",
+    letter: "letter", send: "letter",
+    enforce: "enforce", shield: "enforce", pay: "payment",
+  };
   const runAction = (a) => {
-    if (a.id === "view_refs") setDocsOpen(true);
-    else if (a.id === "update_arrangement") window.muToast("נפתח מסך עדכון הסדר תשלומים", "card");
-    else if (a.id === "interest") setCalcOpen(true);
-    else if (a.id === "letter") setCopilot(true);
-    else window.muToast(a.label, a.icon);
+    const flowId = ACTION_TO_FLOW[a.id];
+    if (flowId) return openFlow(flowId);
+    if (a.id === "view_refs" || a.id === "docs") return setDocsOpen(true);
+    if (a.id === "interest" || a.id === "calc") return setCalcOpen(true);
+    if (a.id === "notes") return setNotesOpen(true);
+    if (a.id === "summary" || a.id === "sigma") return window.muToast("נפתח סיכום כספי למשלם", "sigma");
+    if (a.id === "print") return window.muToast("מכין הדפסה…", "print");
+    if (a.id === "scan") return window.muToast("נפתח חלון סריקת מסמכים", "scan");
+    window.muToast(a.label || "פעולה", a.icon);
   };
 
   const addNote = (text) => setNotes(n => [{ id: Date.now(), author: "שמעון עמר", role: "פקיד גבייה", date: new Date().toLocaleDateString("he-IL") + " " + new Date().toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" }), text }, ...n]);
@@ -178,6 +208,7 @@ function App() {
       <DocsDrawer open={docsOpen} onClose={() => setDocsOpen(false)} docs={DOCUMENTS}/>
       <InterestCalc open={calcOpen} onClose={() => setCalcOpen(false)} baseNominal={TOTALS.nominal}/>
       <WideTxnScreen open={wideOpen} onClose={() => { setWideOpen(false); setWideNaxas(null); }} payer={PAYER} filterNaxas={wideNaxas}/>
+      <FlowHost flow={flow} onClose={() => setFlow(null)} onComplete={completeFlow}/>
       <ToastHost/>
 
       <TweaksPanel>
