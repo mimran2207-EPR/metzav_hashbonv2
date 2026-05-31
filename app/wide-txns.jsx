@@ -9,6 +9,7 @@ import { Icon } from './icons.jsx';
 import { LEDGER, LEDGER_COLUMNS, fmt } from './data.jsx';
 import { useColSort, useColOrder, SortTh, ColumnPicker, useColVisibility } from './table-utils.jsx';
 import { dateKey } from './dates.js';
+import { toast } from './toast.js';
 
 const TABS = [
   "הצגת תנועות", "הצגת תשלומים", "נכסים מרוכז", "טיפול בשוברים",
@@ -297,7 +298,7 @@ function WideTxnScreen({ open, onClose, payer, filterNaxas }) {
           <span style={{ fontSize: 13, fontWeight: 600 }}>יתרת חוב</span>
           <span className="num" style={{ fontSize: 17, fontWeight: 800 }}>₪{fmt(totals.balance)}</span>
         </span>
-        <button data-focusring onClick={() => window.muToast("מייצא תנועות ל-Excel", "download")}
+        <button data-focusring onClick={() => toast("מייצא תנועות ל-Excel", "download")}
           style={{ display: "inline-flex", alignItems: "center", gap: 7, border: "1px solid var(--ink-300)", background: "var(--white)",
             borderRadius: 9, padding: "7px 14px", cursor: "pointer", fontFamily: "var(--font)", fontSize: 13, fontWeight: 600, color: "var(--ink-700)" }}>
           <Icon name="download" size={15} color="var(--ink-600)"/> ייצוא

@@ -3,6 +3,7 @@ import { Icon } from './icons.jsx';
 import { Card, Chip, PillButton, useMediaQuery } from './ui.jsx';
 import { YEARS, YEAR_BALANCES, fmt } from './data.jsx';
 import s from './ui.module.css';
+import { toast } from './toast.js';
 
 function fieldRow(label, value, mono) {
   return (
@@ -87,7 +88,7 @@ function BalanceCard({ totals, year, onPay }) {
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: "auto", position: "relative" }}>
         <PillButton variant="light" chevron onClick={onPay} style={{ flex: 1, background: "#fff", color: "var(--teal-700)", border: "none" }}>לתשלום</PillButton>
-        <PillButton variant="light" icon="sigma" onClick={() => window.muToast("נפתח סיכום כספי למשלם", "sigma")}>סיכום</PillButton>
+        <PillButton variant="light" icon="sigma" onClick={() => toast("נפתח סיכום כספי למשלם", "sigma")}>סיכום</PillButton>
       </div>
     </Card>
   );
@@ -331,11 +332,11 @@ function ActionBar({ notesCount, year, onYear, handlers }) {
     { name: "תקשורת", items: [
       { id: "notes", icon: "notes", label: "הערות", badge: notesCount, onClick: handlers.onNotes },
       { id: "docs", icon: "docs", label: "מסמכים", onClick: handlers.onDocs },
-      { id: "scan", icon: "scan", label: "סריקת מסמכים", onClick: () => window.muToast("נפתח חלון סריקת מסמכים", "scan") },
-      { id: "print", icon: "print", label: "הדפסה", onClick: () => window.muToast("מכין הדפסת מצב חשבון…", "print") },
+      { id: "scan", icon: "scan", label: "סריקת מסמכים", onClick: () => toast("נפתח חלון סריקת מסמכים", "scan") },
+      { id: "print", icon: "print", label: "הדפסה", onClick: () => toast("מכין הדפסת מצב חשבון…", "print") },
     ]},
     { name: "כספים", items: [
-      { id: "summary", icon: "sigma", label: "סיכום", onClick: () => window.muToast("נפתח סיכום כספי למשלם", "sigma") },
+      { id: "summary", icon: "sigma", label: "סיכום", onClick: () => toast("נפתח סיכום כספי למשלם", "sigma") },
       { id: "pay", icon: "card", label: "תשלומים", onClick: handlers.onPay },
       { id: "calc", icon: "calc", label: "מחשבון ריבית", onClick: handlers.onCalc },
     ]},

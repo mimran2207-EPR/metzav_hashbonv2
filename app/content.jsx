@@ -5,6 +5,7 @@ import { fmt, SUBJECT_DETAILS, TXNS, QUICK_ACTIONS } from './data.jsx';
 import { useColSort, useColOrder, SortTh, ColumnPicker, useColVisibility } from './table-utils.jsx';
 import { dateKey } from './dates.js';
 import s from './ui.module.css';
+import { toast } from './toast.js';
 
 // SubjectCard — one subject in the carousel.
 function SubjectCard({ sub, active, onSelect }) {
@@ -276,7 +277,7 @@ function TxnTable({ rows, types, compact }) {
         <div style={{ flex: 1 }}/>
         <span style={{ fontSize: 12, color: "var(--ink-muted)" }}><span className="num">{sortedFiltered.length}</span> שורות</span>
         <ColumnPicker cols={T3_COLS} hidden={t3Hidden} onToggle={t3ToggleCol}/>
-        <button data-focusring title="ייצוא" onClick={() => window.muToast("מייצא תנועות ל-Excel", "download")}
+        <button data-focusring title="ייצוא" onClick={() => toast("מייצא תנועות ל-Excel", "download")}
           style={{ border: "1px solid var(--ink-200)", background: "#fff", borderRadius: 8, padding: "5px 8px", cursor: "pointer", display: "grid", placeItems: "center" }}>
           <Icon name="download" size={15} color="var(--ink-600)"/>
         </button>
@@ -845,7 +846,7 @@ function AllEntitiesView({ subjects, filterSubject, density, txnTypes, onAction,
     {/* ── modals ── */}
     <PropertyTypesModal entity={typesModal} onClose={() => setTypesModal(null)}/>
     <HoldersHistoryModal entity={holdersModal} onClose={() => setHoldersModal(null)}
-      onOpenHolder={h => window.muToast(`פותח כרטיס יתרה — ${h.name} · ${h.payerNo}`, "user")}/>
+      onOpenHolder={h => toast(`פותח כרטיס יתרה — ${h.name} · ${h.payerNo}`, "user")}/>
     </>
   );
 }

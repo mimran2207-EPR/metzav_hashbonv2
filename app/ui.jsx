@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Icon } from './icons.jsx';
 import { space } from './tokens.js';
+import { registerToast } from './toast.js';
 import s from './ui.module.css';
 
 // useMediaQuery — SSR-safe responsive hook. Lets components react to viewport
@@ -110,15 +111,13 @@ function Segmented({ options, value, onChange, size = "md" }) {
 
 function ToastHost() {
   const [items, setItems] = useState([]);
-  const remove = (id) => setItems(x => x.filter(i => i.id !== id));
-  useEffect(() => {
-    // window.muToast(text, icon?, tone?) — tone: default | success | error | warn
-    window.muToast = (text, icon = "check", tone = "default") => {
-      const id = Math.random().toString(36).slice(2);
-      setItems(x => [...x, { id, text, icon, tone }]);
-      setTimeout(() => remove(id), 4000);
-    };
-  }, []);
+  const remove = useCallback((id) => setItems(x => x.filter(i => i.id !== id)), []);
+  // register the emitter for the importable toast() dispatcher (no window global)
+  useEffect(() => registerToast((text, icon = "check", tone = "default") => {
+    const id = Math.random().toString(36).slice(2);
+    setItems(x => [...x, { id, text, icon, tone }]);
+    setTimeout(() => remove(id), 4000);
+  }), [remove]);
   const dot = { default: "var(--teal-500)", success: "var(--green)", error: "var(--red)", warn: "var(--amber)" };
   return (
     <div role="status" aria-live="polite" className={s.toastHost}>

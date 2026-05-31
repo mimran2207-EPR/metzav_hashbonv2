@@ -14,6 +14,7 @@ import { Icon } from './icons.jsx';
 import { PAYER, TOTALS, SERVICES, TXNS, TXN_TYPES, SUBJECTS, DOCUMENTS, AI_INSIGHTS, QUICK_ACTIONS, NOTES, WORKLIST, STATUS, CASE_TIMELINE, TASKS, TASK_TYPES, CURRENT_CLERK, buildCaseData } from './data.jsx';
 import { ThemePicker, THEMES, generateThemeFromColor } from './table-utils.jsx';
 import { usePersistedState, loadPref, savePref } from './storage.js';
+import { toast } from './toast.js';
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "accent": "#2AA7B8",
@@ -109,7 +110,7 @@ function App() {
     const stamp = now.toLocaleDateString("he-IL") + " " + now.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
     setCaseEvents(prev => [{ ...ev, id: now.getTime(), time: stamp }, ...prev]);
     addNote(`${ev.title} — ${ev.detail}`);
-    window.muToast(ev.title, ev.icon, ev.tone === "crit" ? "error" : ev.tone === "warn" ? "warn" : "success");
+    toast(ev.title, ev.icon, ev.tone === "crit" ? "error" : ev.tone === "warn" ? "warn" : "success");
     // flows that need follow-up auto-create a task
     const followUp = { arrangement: "מעקב תשלום ראשון בהסדר", letter: "מעקב תגובת המשלם למכתב", enforce: "מעקב הליך אכיפה" }[ev.type];
     if (followUp) setTasks(ts => [{ id: now.getTime() + 1, title: followUp, due: "", overdue: false, assignee: "שמעון עמר", priority: "med", caseName: activeCase.name, caseId: activeCase.id, done: false }, ...ts]);
@@ -133,12 +134,12 @@ function App() {
       return openCase(match);
     }
     const map = {
-      pay: () => openFlow("payment"), calc: () => setCalcOpen(true), print: () => window.muToast("מכין הדפסת מצב חשבון…", "print"),
+      pay: () => openFlow("payment"), calc: () => setCalcOpen(true), print: () => toast("מכין הדפסת מצב חשבון…", "print"),
       enforce: () => openFlow("enforce"), notes: () => setNotesOpen(true), docs: () => setDocsOpen(true),
       letter: () => openFlow("letter"), arrangement: () => openFlow("arrangement"),
     };
     if (map[item.id]) map[item.id]();
-    else window.muToast("נבחר: " + item.label);
+    else toast("נבחר: " + item.label);
   };
 
   // route every action id (quick-actions + L2 toolbar icons) to a real flow
@@ -156,10 +157,10 @@ function App() {
     if (a.id === "view_refs" || a.id === "docs") return setDocsOpen(true);
     if (a.id === "interest" || a.id === "calc") return setCalcOpen(true);
     if (a.id === "notes") return setNotesOpen(true);
-    if (a.id === "summary" || a.id === "sigma") return window.muToast("נפתח סיכום כספי למשלם", "sigma");
-    if (a.id === "print") return window.muToast("מכין הדפסה…", "print");
-    if (a.id === "scan") return window.muToast("נפתח חלון סריקת מסמכים", "scan");
-    window.muToast(a.label || "פעולה", a.icon);
+    if (a.id === "summary" || a.id === "sigma") return toast("נפתח סיכום כספי למשלם", "sigma");
+    if (a.id === "print") return toast("מכין הדפסה…", "print");
+    if (a.id === "scan") return toast("נפתח חלון סריקת מסמכים", "scan");
+    toast(a.label || "פעולה", a.icon);
   };
 
   const addNote = (text) => setNotes(n => [{ id: Date.now(), author: "שמעון עמר", role: "פקיד גבייה", date: new Date().toLocaleDateString("he-IL") + " " + new Date().toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" }), text }, ...n]);

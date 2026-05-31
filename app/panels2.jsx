@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Icon } from './icons.jsx';
 import { Sheet, PillButton, Chip } from './ui.jsx';
 import { fmt, PAYER } from './data.jsx';
+import { toast } from './toast.js';
 
 function CopilotPanel({ open, onClose, onRunFlow }) {
   const [msgs, setMsgs] = useState([
@@ -127,7 +128,7 @@ function NotesDrawer({ open, onClose, notes, onAdd }) {
           <textarea value={draft} onChange={e => setDraft(e.target.value)} placeholder="הוסף הערה חדשה…" rows={2}
             style={{ width: "100%", resize: "none", border: "1px solid var(--ink-200)", borderRadius: 11, padding: "10px 12px",
               fontFamily: "var(--font)", fontSize: 13.5, color: "var(--ink-800)", outline: "none", boxSizing: "border-box" }}/>
-          <PillButton variant="primary" icon="plus" onClick={() => { if (draft.trim()) { onAdd(draft); setDraft(""); window.muToast("ההערה נוספה", "check", "success"); } }}>הוסף הערה</PillButton>
+          <PillButton variant="primary" icon="plus" onClick={() => { if (draft.trim()) { onAdd(draft); setDraft(""); toast("ההערה נוספה", "check", "success"); } }}>הוסף הערה</PillButton>
         </div>
       }>
       <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
@@ -156,7 +157,7 @@ function DocsDrawer({ open, onClose, docs }) {
   const typeColor = { PDF: "red", JPG: "blue", DOC: "teal" };
   return (
     <Sheet open={open} onClose={onClose} side="end" width={420} title={`מסמכים (${docs.length})`} sub="מסמכים מקושרים למשלם"
-      footer={<PillButton variant="secondary" icon="scan" onClick={() => window.muToast("נפתח חלון סריקת מסמכים", "scan")} style={{ width: "100%" }}>סרוק מסמך חדש</PillButton>}>
+      footer={<PillButton variant="secondary" icon="scan" onClick={() => toast("נפתח חלון סריקת מסמכים", "scan")} style={{ width: "100%" }}>סרוק מסמך חדש</PillButton>}>
       <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
         {docs.map(d => (
           <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 12, border: "1px solid var(--ink-200)", borderRadius: 12, padding: "11px 13px" }}>
@@ -170,7 +171,7 @@ function DocsDrawer({ open, onClose, docs }) {
                 <span className="num">{d.date}</span><span>·</span><span className="num">{d.size}</span>
               </div>
             </div>
-            <button data-focusring title="הורד" onClick={() => window.muToast("מוריד " + d.name, "download")}
+            <button data-focusring title="הורד" onClick={() => toast("מוריד " + d.name, "download")}
               style={{ border: "1px solid var(--ink-200)", background: "#fff", borderRadius: 8, padding: "7px", cursor: "pointer", display: "grid", placeItems: "center", flex: "none" }}>
               <Icon name="download" size={16} color="var(--ink-600)"/>
             </button>
@@ -236,7 +237,7 @@ function InterestCalc({ open, onClose, baseNominal }) {
               <span className="num" style={{ fontSize: 24, fontWeight: 700, color: "var(--teal-600)" }}>₪{fmt(total)}</span>
             </div>
           </div>
-          <PillButton variant="primary" icon="check" onClick={() => { window.muToast("החישוב נשמר לתיק המשלם", "check", "success"); onClose(); }} style={{ width: "100%" }}>שמור חישוב</PillButton>
+          <PillButton variant="primary" icon="check" onClick={() => { toast("החישוב נשמר לתיק המשלם", "check", "success"); onClose(); }} style={{ width: "100%" }}>שמור חישוב</PillButton>
         </div>
       </div>
     </div>
@@ -263,7 +264,7 @@ function TasksDrawer({ open, onClose, tasks, onToggle, onAdd }) {
             <input value={due} onChange={e => setDue(e.target.value)} placeholder="תאריך יעד (אופ׳)"
               style={{ flex: 1, boxSizing: "border-box", border: "1px solid var(--ink-200)", borderRadius: 11, padding: "10px 12px",
                 fontFamily: "var(--font)", fontSize: 13, color: "var(--ink-800)", outline: "none" }}/>
-            <PillButton variant="primary" icon="plus" onClick={() => { if (title.trim()) { onAdd(title, due); setTitle(""); setDue(""); window.muToast("המשימה נוספה", "check", "success"); } }}>הוסף</PillButton>
+            <PillButton variant="primary" icon="plus" onClick={() => { if (title.trim()) { onAdd(title, due); setTitle(""); setDue(""); toast("המשימה נוספה", "check", "success"); } }}>הוסף</PillButton>
           </div>
         </div>
       }>
