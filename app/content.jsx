@@ -850,86 +850,163 @@ function AllEntitiesView({ subjects, filterSubject, density, txnTypes, onAction,
                   </td>
                 </tr>
 
-                {/* ── Expanded body: context panel + charges ── */}
+                {/* ── Level 2: full-width sub-panel (legacy-style) ── */}
                 {isOpen && (
                   <tr>
-                    <td colSpan={COLS.length} style={{ padding: 0, background: "#fff", borderBottom: "2px solid var(--teal-400)" }}>
-                      <div className="mu-rise">
-                        <PropertyContextPanel subItem={entity.subItem} subject={entity.subject}
-                          totalBalance={entityBalance} onAction={onAction}/>
+                    <td colSpan={COLS.length} style={{ padding: 0, borderBottom: "2px solid var(--teal-500)" }}>
+                      <div className="mu-rise" style={{ background: "#fafcfd" }}>
 
-                        {/* ── Level 2: charges sub-table ── */}
-                        <div style={{ padding: "0 16px 16px" }}>
-                          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--ink-muted)", marginBottom: 8 }}>
-                            סוגי חיוב ({entity.charges.length})
+                        {/* Sub-header: entity identity + action toolbar */}
+                        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px",
+                          background: "linear-gradient(135deg,var(--teal-800),var(--teal-700))", color: "#fff" }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <span style={{ fontSize: 14, fontWeight: 700 }}>יתרות לנכס — </span>
+                            <span className="num" style={{ fontSize: 14, fontWeight: 700 }}>{entity.id}</span>
+                            <span style={{ fontSize: 13, color: "rgba(255,255,255,.75)", marginInlineStart: 8 }}>
+                              · סוגי שירות ({entity.charges.length})
+                            </span>
                           </div>
-                          <div style={{ borderRadius: 10, border: "1px solid var(--ink-200)", overflow: "hidden" }}>
-                            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                              <thead>
-                                <tr style={{ background: "var(--ink-100)" }}>
-                                  {["סוג חיוב", "תנועות", "יתרה", ""].map((h, j) => (
-                                    <th key={j} style={{ padding: "8px 12px", fontSize: 12, fontWeight: 600, color: "var(--ink-muted)",
-                                      textAlign: j === 2 ? "end" : j === 3 ? "center" : "start", whiteSpace: "nowrap" }}>{h}</th>
-                                  ))}
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {entity.charges.map((c, ci) => {
-                                  const bal = chargeBalance(c);
-                                  const txnRows = c.txns ? (TXNS[c.txns] || []) : [];
-                                  const isChargeOpen = openCharge === c.id;
-                                  const hasTxns = txnRows.length > 0;
-                                  return (
-                                    <React.Fragment key={c.id}>
-                                      <tr onClick={() => hasTxns && setOpenCharge(isChargeOpen ? null : c.id)}
-                                        style={{ cursor: hasTxns ? "pointer" : "default",
-                                          background: isChargeOpen ? "var(--teal-50)" : ci % 2 === 0 ? "#fff" : "var(--ink-50)",
-                                          borderBottom: "1px solid var(--ink-100)", transition: "background .12s" }}>
-                                        <td style={{ padding: "9px 12px" }}>
-                                          <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                                            <Icon name="receipt" size={13} color={isChargeOpen ? "var(--teal-600)" : "var(--ink-400)"}/>
-                                            <span style={{ fontWeight: 600, color: "var(--ink-800)" }}>{c.name}</span>
+                          {/* toolbar */}
+                          {[
+                            { icon: "print", label: "הדפסה" }, { icon: "scan", label: "סריקת מסמכים" },
+                            { icon: "notes", label: "הערות" }, { icon: "sigma", label: "סיכום" },
+                            { icon: "card", label: "עדכון הסדר" }, { icon: "receipt", label: "זיכוי חיוב" },
+                            { icon: "wallet", label: "הנחות" }, { icon: "user", label: "מחזיקים" },
+                          ].map(btn => (
+                            <button key={btn.icon} data-focusring
+                              onClick={e => { e.stopPropagation(); onAction && onAction({ id: btn.icon, label: btn.label }); }}
+                              title={btn.label}
+                              style={{ width: 30, height: 30, display: "grid", placeItems: "center",
+                                border: "1px solid rgba(255,255,255,.25)", background: "rgba(255,255,255,.12)",
+                                borderRadius: 7, cursor: "pointer", flexShrink: 0 }}>
+                              <Icon name={btn.icon} size={14} color="#fff"/>
+                            </button>
+                          ))}
+                          {onOpenWide && (
+                            <button data-focusring onClick={e => { e.stopPropagation(); onOpenWide(); }}
+                              style={{ display: "inline-flex", alignItems: "center", gap: 5,
+                                border: "1px solid rgba(255,255,255,.4)", background: "rgba(255,255,255,.15)",
+                                color: "#fff", borderRadius: 7, padding: "5px 10px", cursor: "pointer",
+                                fontFamily: "var(--font)", fontSize: 12, fontWeight: 600, flexShrink: 0 }}>
+                              <Icon name="receipt" size={13} color="#fff"/> תנועות מלאות
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Level 2 table — service types with financial columns */}
+                        <div style={{ overflowX: "auto" }}>
+                          <table style={{ width: "100%", minWidth: 840, borderCollapse: "collapse", fontSize: 12.5, tableLayout: "fixed" }}>
+                            <colgroup>
+                              <col style={{ width: "36px" }}/>{/* expand */}
+                              <col style={{ width: "36px" }}/>{/* רץ */}
+                              <col style={{ width: "52px" }}/>{/* שירות */}
+                              <col style={{ width: "140px" }}/>{/* תיאור שירות */}
+                              <col style={{ width: "68px" }}/>{/* ש.מקור */}
+                              <col style={{ width: "52px" }}/>{/* הנחה */}
+                              <col style={{ width: "120px" }}/>{/* תיאור הנחה */}
+                              <col style={{ width: "52px" }}/>{/* הסדר */}
+                              <col style={{ width: "auto" }}/>{/* תיאור הסדר */}
+                              <col style={{ width: "52px" }}/>{/* מעקב */}
+                              <col style={{ width: "110px" }}/>{/* תשלומים */}
+                              <col style={{ width: "110px" }}/>{/* חיובים */}
+                              <col style={{ width: "110px" }}/>{/* יתרה */}
+                            </colgroup>
+                            <thead>
+                              <tr style={{ background: "var(--ink-100)", borderBottom: "1px solid var(--ink-200)" }}>
+                                {["", "רץ", "שירות", "תיאור שירות", "ש.מקור", "הנחה", "תיאור הנחה", "הסדר", "תיאור הסדר", "מעקב", "תשלומים", "חיובים", "יתרה"].map((h, j) => (
+                                  <th key={j} style={{ padding: "7px 10px", fontSize: 11.5, fontWeight: 700,
+                                    color: "var(--ink-600)", whiteSpace: "nowrap", overflow: "hidden",
+                                    textAlign: j >= 10 ? "end" : j === 0 || j === 9 ? "center" : "start" }}>
+                                    {h}
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {entity.charges.map((c, ci) => {
+                                const txnRows = c.txns ? (TXNS[c.txns] || []) : [];
+                                const bal = chargeBalance(c);
+                                const paid = txnRows.filter(r => r.dc === "ז").reduce((a, r) => a + (r.nominal || r.addon || 0), 0);
+                                const charged = txnRows.filter(r => r.dc === "ח").reduce((a, r) => a + (r.nominal || r.addon || 0), 0);
+                                const isChargeOpen = openCharge === c.id;
+                                const hasTxns = txnRows.length > 0;
+                                const rowBg = isChargeOpen ? "var(--teal-50)" : ci % 2 === 0 ? "#fff" : "var(--ink-50)";
+                                return (
+                                  <React.Fragment key={c.id}>
+                                    <tr onClick={() => hasTxns && setOpenCharge(isChargeOpen ? null : c.id)}
+                                      style={{ cursor: hasTxns ? "pointer" : "default",
+                                        background: rowBg, borderBottom: "1px solid var(--ink-100)", transition: "background .12s" }}>
+                                      {/* expand */}
+                                      <td style={{ textAlign: "center", padding: "8px 6px" }}>
+                                        {hasTxns && <Icon name="chevdown" size={13} color="var(--ink-400)"
+                                          style={{ display: "block", margin: "0 auto", transform: isChargeOpen ? "rotate(180deg)" : "none", transition: "transform .18s" }}/>}
+                                      </td>
+                                      {/* רץ */}
+                                      <td className="num" style={{ padding: "8px 10px", textAlign: "center", color: "var(--ink-400)", fontSize: 11 }}>{ci + 1}</td>
+                                      {/* שירות code */}
+                                      <td style={{ padding: "8px 10px", textAlign: "center" }}>
+                                        <span className="num" style={{ background: "var(--teal-50)", color: "var(--teal-700)", borderRadius: 5, padding: "1px 7px", fontSize: 11, fontWeight: 700 }}>
+                                          {String(c.code || ci + 1).padStart(2, "0")}
+                                        </span>
+                                      </td>
+                                      {/* תיאור שירות */}
+                                      <td style={{ padding: "8px 10px", fontWeight: 600, color: isChargeOpen ? "var(--teal-700)" : "var(--ink-800)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</td>
+                                      {/* ש.מקור */}
+                                      <td className="num" style={{ padding: "8px 10px", textAlign: "center", color: "var(--ink-muted)", fontSize: 11 }}>{c.srcYear || "—"}</td>
+                                      {/* הנחה */}
+                                      <td className="num" style={{ padding: "8px 10px", textAlign: "center", color: c.discount ? "var(--ok-fg)" : "var(--ink-300)", fontWeight: c.discount ? 700 : 400 }}>
+                                        {c.discount ? `${c.discount}%` : "—"}
+                                      </td>
+                                      {/* תיאור הנחה */}
+                                      <td style={{ padding: "8px 10px", color: "var(--ink-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 11 }}>{c.discountDesc || ""}</td>
+                                      {/* הסדר */}
+                                      <td className="num" style={{ padding: "8px 10px", textAlign: "center", color: c.arrangement ? "var(--warn-fg)" : "var(--ink-300)", fontWeight: c.arrangement ? 700 : 400 }}>
+                                        {c.arrangement ? `${c.arrangement}%` : "—"}
+                                      </td>
+                                      {/* תיאור הסדר */}
+                                      <td style={{ padding: "8px 10px", color: "var(--ink-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 11 }}>{c.arrangementDesc || ""}</td>
+                                      {/* מעקב */}
+                                      <td style={{ padding: "8px 10px", textAlign: "center" }}>
+                                        {c.tracking && <span style={{ color: "var(--ok-fg)", fontWeight: 700, fontSize: 14 }}>✓</span>}
+                                      </td>
+                                      {/* תשלומים */}
+                                      <td className="num" style={{ padding: "8px 10px", textAlign: "end", color: "var(--ok-fg)", fontWeight: 600 }}>
+                                        {paid > 0 ? fmt(paid) : "—"}
+                                      </td>
+                                      {/* חיובים */}
+                                      <td className="num" style={{ padding: "8px 10px", textAlign: "end", color: "var(--ink-700)", fontWeight: 600 }}>
+                                        {charged > 0 ? fmt(charged) : "—"}
+                                      </td>
+                                      {/* יתרה */}
+                                      <td className="num" style={{ padding: "8px 10px", textAlign: "end", fontWeight: 700,
+                                        color: bal > 0 ? "var(--red)" : "var(--ok-fg)" }}>
+                                        {bal > 0 ? fmt(bal) : "0 ✓"}
+                                      </td>
+                                    </tr>
+                                    {/* ── Level 3: transactions inline ── */}
+                                    {isChargeOpen && (
+                                      <tr>
+                                        <td colSpan={13} style={{ padding: 0, background: "var(--teal-50)", borderBottom: "1px solid var(--teal-200)" }}>
+                                          <div className="mu-rise">
+                                            <TxnTable rows={txnRows} types={txnTypes} compact={compact}/>
                                           </div>
                                         </td>
-                                        <td style={{ padding: "9px 12px" }}>
-                                          {hasTxns && <Chip tone={isChargeOpen ? "teal" : "gray"} style={{ fontSize: 10 }}>{txnRows.length} תנועות</Chip>}
-                                        </td>
-                                        <td className="num" style={{ padding: "9px 12px", textAlign: "end", fontWeight: 700,
-                                          color: bal > 0 ? "var(--ink-900)" : "var(--ok-fg)" }}>
-                                          {bal > 0 ? `₪${fmt(bal)}` : "0 ✓"}
-                                        </td>
-                                        <td style={{ padding: "9px 12px", textAlign: "center", width: 36 }}>
-                                          {hasTxns && <Icon name="chevdown" size={13} color="var(--ink-400)"
-                                            style={{ transform: isChargeOpen ? "rotate(180deg)" : "none", transition: "transform .18s", display: "block", margin: "0 auto" }}/>}
-                                        </td>
                                       </tr>
-                                      {/* ── Level 3: transactions ── */}
-                                      {isChargeOpen && (
-                                        <tr>
-                                          <td colSpan={4} style={{ padding: 0, background: "var(--teal-50)" }}>
-                                            <div className="mu-rise">
-                                              {onOpenWide && (
-                                                <div style={{ padding: "7px 14px 4px", display: "flex", justifyContent: "flex-end" }}>
-                                                  <button data-focusring onClick={onOpenWide}
-                                                    style={{ display: "inline-flex", alignItems: "center", gap: 5,
-                                                      border: "1px solid var(--teal-300)", background: "var(--teal-50)", color: "var(--teal-700)",
-                                                      borderRadius: 999, padding: "4px 10px", cursor: "pointer", fontFamily: "var(--font)", fontSize: 12, fontWeight: 600 }}>
-                                                    <Icon name="receipt" size={12} color="var(--teal-600)"/> מסך תנועות מלא
-                                                  </button>
-                                                </div>
-                                              )}
-                                              <TxnTable rows={txnRows} types={txnTypes} compact={compact}/>
-                                            </div>
-                                          </td>
-                                        </tr>
-                                      )}
-                                    </React.Fragment>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
+                                    )}
+                                  </React.Fragment>
+                                );
+                              })}
+                            </tbody>
+                          </table>
                         </div>
+
+                        {/* Holder chain — compact strip below the table */}
+                        {entity.holders.length > 0 && (
+                          <div style={{ padding: "8px 16px 12px", borderTop: "1px solid var(--ink-200)" }}>
+                            <PropertyContextPanel subItem={entity.subItem} subject={entity.subject}
+                              totalBalance={entityBalance} onAction={onAction}/>
+                          </div>
+                        )}
                       </div>
                     </td>
                   </tr>

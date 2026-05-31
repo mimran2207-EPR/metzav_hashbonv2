@@ -63,10 +63,10 @@ const SUBJECT_DETAILS = {
         { name: "ישראל לדוגמה (קודם)", payerNo: "888-DEMO-1", from: "08/2008", to: "03/2014", reason: "ירושה" },
       ],
       charges: [
-        { id: "arnona",  name: "ארנונה",            txns: "arnona" },
-        { id: "shmira",  name: "אגרת שמירה",        txns: "shmira" },
-        { id: "sewage",  name: "אגרת ביוב",         txns: "sewage" },
-        { id: "collect", name: "הוצ' גבייה (מילגם)", txns: "collect" },
+        { id: "arnona",  code:  1, name: "ארנונה",            txns: "arnona",  srcYear: 2026, discount: 15, discountDesc: "ועדת הנחות", arrangement: null, tracking: false },
+        { id: "shmira",  code:  2, name: "אגרת שמירה",        txns: "shmira",  srcYear: 2026, discount: null, discountDesc: null, arrangement: null, tracking: false },
+        { id: "sewage",  code:  3, name: "אגרת ביוב",         txns: "sewage",  srcYear: 2026, discount: null, discountDesc: null, arrangement: null, tracking: false },
+        { id: "collect", code: 16, name: "הוצ' גבייה (מילגם)", txns: "collect", srcYear: 2026, discount: null, discountDesc: null, arrangement: null, tracking: true },
       ] },
     { id: "5002206", name: "מחסן", meta: "רחוב הדוגמה 1",
       propertyTypes: [
@@ -77,7 +77,7 @@ const SUBJECT_DETAILS = {
         { name: "כהן דוד", payerNo: "028841200", from: "05/2011", to: "10/2019", reason: "מכירה" },
       ],
       charges: [
-        { id: "arnona_b", name: "ארנונה", balance: 0 },
+        { id: "arnona_b", code: 1, name: "ארנונה", balance: 0, srcYear: 2026, discount: null, arrangement: null, tracking: false },
       ] },
     { id: "5002207", name: "חניה צמודה", meta: "רחוב הדוגמה 1",
       propertyTypes: [
@@ -87,7 +87,7 @@ const SUBJECT_DETAILS = {
         { name: "ישראל לדוגמה", payerNo: "999-DEMO", from: "10/2019", to: null, current: true, reason: "צמוד לדירה" },
       ],
       charges: [
-        { id: "arnona_c", name: "ארנונה", balance: 0 },
+        { id: "arnona_c", code: 1, name: "ארנונה", balance: 0, srcYear: 2026, discount: null, arrangement: null, tracking: false },
       ] },
   ] },
   water: { subItems: [
@@ -100,7 +100,7 @@ const SUBJECT_DETAILS = {
         { name: "לדוגמה רחל", payerNo: "888-DEMO-2", from: "03/2014", to: "10/2019", reason: "החלפת מחזיק" },
       ],
       charges: [
-        { id: "water", name: "מים וביוב", txns: "water" },
+        { id: "water", code: 4, name: "מים וביוב", txns: "water", srcYear: 2026, discount: null, arrangement: 30, arrangementDesc: "פריסה 6 תשלומים", tracking: false },
       ] },
     { id: "13-88143", name: "מד מים — גינה", meta: "גינון / השקיה",
       propertyTypes: [
@@ -110,7 +110,7 @@ const SUBJECT_DETAILS = {
         { name: "ישראל לדוגמה", payerNo: "999-DEMO", from: "10/2019", to: null, current: true, reason: "התקנה" },
       ],
       charges: [
-        { id: "water_b", name: "מים — גינון", balance: 0 },
+        { id: "water_b", code: 4, name: "מים — גינון", balance: 0, srcYear: 2026, discount: null, arrangement: null, tracking: false },
       ] },
   ] },
 };
