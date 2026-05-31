@@ -47,7 +47,7 @@ function App() {
   const [themeId, setThemeId] = usePersistedState("themeId", "teal");
   const [flow, setFlow] = useState(null);          // {id, ctx} active action flow
   const [caseEvents, setCaseEvents] = useState([]); // live case timeline events
-  const [view, setView] = useState("worklist");    // "worklist" (queue) | "case"
+  const [view, setView] = useState("case");         // "case" (account status) | "worklist" (tasks)
   const [activeCase, setActiveCase] = useState(WORKLIST[0]);
   const [tasks, setTasks] = useState(TASKS);
   const [tasksOpen, setTasksOpen] = useState(false);
@@ -167,10 +167,10 @@ function App() {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <TopBar onCommand={() => setCmdOpen(true)}
-          onNav={(id) => { if (id === "home" || id === "back") { setView("worklist"); return; } window.muToast({ forward: "ניווט קדימה", history: "היסטוריית מסכים", fav: "נוסף למועדפים" }[id] || "ניווט", id === "fav" ? "star" : "home"); }}
+          onNav={(id) => { if (id === "back") { if (view === "case") setCmdOpen(true); else setView("case"); } }}
           view={view} onSwitchView={setView} taskCount={openTaskCount}
           year={year} breadcrumb={view === "worklist"
-            ? { name: "המשימות שלי", no: `${openTaskCount} פתוחות` }
+            ? { name: "משימות שלי", no: `${openTaskCount} פתוחות` }
             : { name: activePayer.name, no: activePayer.payerNo }}/>
 
       {view === "worklist" ? (
@@ -178,23 +178,52 @@ function App() {
           <TaskBoard
             tasks={tasks}
             onToggle={toggleTask}
-            onRunFlow={(flowId, task) => openFlow(flowId, { balance: task.balance, payerName: task.caseName, subtitle: `${task.caseName} · ${task.caseId}` })}
+            onRunFlow={(flowId, task) => {
+              // open the payer's case first, then run the flow
+              const matchedCase = WORKLIST.find(c => c.id === task.caseId) || { id: task.caseId, name: task.caseName, balance: task.balance, status: "active", priority: "med", nba: {} };
+              openCase(matchedCase);
+              setTimeout(() => openFlow(flowId, { balance: task.balance, payerName: task.caseName, subtitle: `${task.caseName} · ${task.caseId}` }), 80);
+            }}
             onOpenCase={openCase}
             onOpenTasks={() => setTasksOpen(true)}/>
           <FloatingCopilot onOpen={() => setCopilot(true)} insights={AI_INSIGHTS}/>
         </main>
       ) : (
       <>
-      {/* back-to-queue ribbon */}
-      <div style={{ maxWidth: 1360, margin: "0 auto", width: "100%", padding: "12px 24px 0", boxSizing: "border-box", display: "flex", alignItems: "center", gap: 12 }}>
-        <button data-focusring onClick={() => setView("worklist")}
-          style={{ display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid var(--ink-200)", background: "var(--white)",
-            borderRadius: 999, padding: "6px 14px", cursor: "pointer", fontFamily: "var(--font)", fontSize: 13, fontWeight: 600, color: "var(--teal-700)" }}>
-          <Icon name="chevright" size={15} color="var(--teal-600)"/> חזרה לתור העבודה
+      {/* case context ribbon — payer identity + quick payer switch */}
+      <div style={{ maxWidth: 1360, margin: "0 auto", width: "100%", padding: "10px 24px 0", boxSizing: "border-box",
+        display: "flex", alignItems: "center", gap: 12 }}>
+        {/* breadcrumb: what case we're in */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 9, flex: "none", display: "grid", placeItems: "center",
+            background: "linear-gradient(135deg,var(--teal-400),var(--teal-600))" }}>
+            <Icon name="user" size={17} color="#fff"/>
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "var(--ink-900)", lineHeight: 1.2 }}>{activePayer.name}</div>
+            <div className="num" style={{ fontSize: 12, color: "var(--ink-muted)" }}>{activePayer.payerNo} · {STATUS[activeCase.status]?.label || "פעיל"}</div>
+          </div>
+        </div>
+        {/* switch payer — opens ⌘K search */}
+        <button data-focusring onClick={() => setCmdOpen(true)}
+          style={{ display: "inline-flex", alignItems: "center", gap: 7, border: "1.5px solid var(--teal-300)",
+            background: "var(--teal-50)", borderRadius: 999, padding: "7px 16px", cursor: "pointer",
+            fontFamily: "var(--font)", fontSize: 13.5, fontWeight: 700, color: "var(--teal-700)",
+            boxShadow: "0 2px 8px rgba(var(--teal-rgb),.12)", transition: "all .13s" }}>
+          <Icon name="search" size={15} color="var(--teal-600)"/> החלף משלם
+          <kbd style={{ fontSize: 11, fontWeight: 600, background: "var(--teal-100)", color: "var(--teal-700)", borderRadius: 6, padding: "1px 6px" }}>⌘K</kbd>
         </button>
-        <span style={{ fontSize: 12.5, color: "var(--ink-muted)" }}>
-          תיק <b className="num" style={{ color: "var(--ink-700)" }}>{activePayer.payerNo}</b>
-        </span>
+        {/* tasks shortcut badge */}
+        {openTaskCount > 0 && (
+          <button data-focusring onClick={() => setView("worklist")}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid var(--ink-200)",
+              background: "var(--white)", borderRadius: 999, padding: "7px 14px", cursor: "pointer",
+              fontFamily: "var(--font)", fontSize: 13, fontWeight: 600, color: "var(--ink-700)" }}>
+            <Icon name="notes" size={15} color="var(--amber)"/>
+            <span className="num" style={{ background: "var(--amber)", color: "#fff", borderRadius: 999, padding: "1px 7px", fontSize: 11, fontWeight: 700 }}>{openTaskCount}</span>
+            משימות פתוחות
+          </button>
+        )}
       </div>
 
       {/* Next-Best-Action banner for the open case */}

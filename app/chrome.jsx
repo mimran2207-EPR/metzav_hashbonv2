@@ -18,12 +18,10 @@ function TopBar({ onCommand, onNav, year, breadcrumb, view, onSwitchView, taskCo
       </button>
     );
   };
+  // Only keep functional nav buttons; forward/history/fav were dead placeholders
   const navBtns = [
-  { id: "home", icon: "home", label: "עמוד הבית" },
-  { id: "back", icon: "back", label: "אחורה" },
-  { id: "forward", icon: "forward", label: "קדימה" },
-  { id: "history", icon: "history", label: "היסטוריית מסכים" },
-  { id: "fav", icon: "star", label: "מועדפים" }];
+    { id: "back", icon: "back", label: "אחורה" },
+  ];
 
   return (
     <header style={{ height: 56, background: "var(--white)", borderBottom: "1px solid var(--ink-200)",
@@ -39,12 +37,12 @@ function TopBar({ onCommand, onNav, year, breadcrumb, view, onSwitchView, taskCo
         </div>
       </div>
 
-      {/* primary view switch */}
+      {/* primary view switch — prominent pill tabs */}
       {onSwitchView && (
-        <nav style={{ display: "flex", alignItems: "center", gap: 2, flex: "none", background: "var(--ink-50)",
-          border: "1px solid var(--ink-100)", borderRadius: 999, padding: 3 }}>
-          <NavTab id="case" label="מצב חשבון"/>
-          <NavTab id="worklist" label="המשימות שלי" badge={taskCount}/>
+        <nav aria-label="ניווט ראשי" style={{ display: "flex", alignItems: "center", gap: 3, flex: "none",
+          background: "var(--ink-100)", borderRadius: 999, padding: 4 }}>
+          <NavTab id="case"     label="מצב חשבון"/>
+          <NavTab id="worklist" label="משימות שלי" badge={taskCount}/>
         </nav>
       )}
 
