@@ -127,6 +127,11 @@ function App() {
 
   const runCommand = (item) => {
     setCmdOpen(false);
+    // payer/property search results open that payer's account status
+    if (item.group === "משלמים" || item.group === "היסטוריה") {
+      const match = WORKLIST.find(c => item.label.includes(c.name)) || WORKLIST[0];
+      return openCase(match);
+    }
     const map = {
       pay: () => openFlow("payment"), calc: () => setCalcOpen(true), print: () => window.muToast("מכין הדפסת מצב חשבון…", "print"),
       enforce: () => openFlow("enforce"), notes: () => setNotesOpen(true), docs: () => setDocsOpen(true),
@@ -163,8 +168,9 @@ function App() {
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <TopBar onCommand={() => setCmdOpen(true)}
           onNav={(id) => { if (id === "home" || id === "back") { setView("worklist"); return; } window.muToast({ forward: "ניווט קדימה", history: "היסטוריית מסכים", fav: "נוסף למועדפים" }[id] || "ניווט", id === "fav" ? "star" : "home"); }}
+          view={view} onSwitchView={setView} taskCount={openTaskCount}
           year={year} breadcrumb={view === "worklist"
-            ? { name: "תור עבודה", no: `${WORKLIST.filter(c => c.status !== "resolved").length} תיקים` }
+            ? { name: "המשימות שלי", no: `${openTaskCount} פתוחות` }
             : { name: activePayer.name, no: activePayer.payerNo }}/>
 
       {view === "worklist" ? (

@@ -3,7 +3,21 @@ import { Icon } from './icons.jsx';
 import { Tip } from './ui.jsx';
 import s from './ui.module.css';
 
-function TopBar({ onCommand, onNav, year, breadcrumb }) {
+function TopBar({ onCommand, onNav, year, breadcrumb, view, onSwitchView, taskCount = 0 }) {
+  const NavTab = ({ id, label, badge }) => {
+    const active = view === id;
+    return (
+      <button data-focusring onClick={() => onSwitchView && onSwitchView(id)}
+        style={{ display: "inline-flex", alignItems: "center", gap: 6, border: "none", cursor: "pointer",
+          borderRadius: 999, padding: "7px 16px", fontFamily: "var(--font)", fontSize: 13.5, fontWeight: 700,
+          background: active ? "var(--teal-500)" : "transparent", color: active ? "#fff" : "var(--ink-600)",
+          transition: "all .13s" }}>
+        {label}
+        {badge > 0 && <span className="num" style={{ background: active ? "rgba(255,255,255,.28)" : "var(--amber)", color: "#fff",
+          borderRadius: 999, padding: "1px 7px", fontSize: 11, fontWeight: 700 }}>{badge}</span>}
+      </button>
+    );
+  };
   const navBtns = [
   { id: "home", icon: "home", label: "עמוד הבית" },
   { id: "back", icon: "back", label: "אחורה" },
@@ -24,6 +38,15 @@ function TopBar({ onCommand, onNav, year, breadcrumb }) {
           <span className="num" style={{ color: "var(--ink-muted)", fontWeight: 500 }}>{breadcrumb.no}</span>
         </div>
       </div>
+
+      {/* primary view switch */}
+      {onSwitchView && (
+        <nav style={{ display: "flex", alignItems: "center", gap: 2, flex: "none", background: "var(--ink-50)",
+          border: "1px solid var(--ink-100)", borderRadius: 999, padding: 3 }}>
+          <NavTab id="case" label="מצב חשבון"/>
+          <NavTab id="worklist" label="המשימות שלי" badge={taskCount}/>
+        </nav>
+      )}
 
       <button data-focusring onClick={onCommand} className={s.searchTrigger}>
         <Icon name="search" size={17} color="var(--teal-500)" />
