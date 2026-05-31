@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { Icon } from './icons.jsx';
 import { Chip, Segmented } from './ui.jsx';
 import { fmt, SUBJECT_DETAILS, TXNS, QUICK_ACTIONS } from './data.jsx';
@@ -741,7 +741,8 @@ function AllEntitiesView({ subjects, filterSubject, density, txnTypes, onAction,
   const [typesModal, setTypesModal] = useState(null);   // entity for property-types modal
   const [holdersModal, setHoldersModal] = useState(null); // entity for holders modal
   const compact = density === "compact";
-  const entities = buildEntityRows(subjects, filterSubject, detailsMap);
+  // memoize the (pure) row build so hover/sort/modal re-renders don't rebuild it
+  const entities = useMemo(() => buildEntityRows(subjects, filterSubject, detailsMap), [subjects, filterSubject, detailsMap]);
   const grandTotal = entities.reduce((sum, e) => sum + e.charges.reduce((a, c) => a + chargeBalance(c), 0), 0);
   const cellPad = compact ? "7px 10px" : "10px 12px";
 
