@@ -127,13 +127,14 @@ function Worklist({ onOpenCase, onRunNba }) {
         {filtered.length === 0 && (
           <div style={{ textAlign: "center", padding: "40px", color: "var(--ink-400)", fontSize: 14 }}>אין תיקים התואמים לסינון</div>
         )}
-        {filtered.map(c => {
+        {filtered.map((c, i) => {
           const prio = PRIORITY[c.priority];
           const st = STATUS[c.status];
           return (
             <div key={c.id} onClick={() => onOpenCase(c)} data-focusring tabIndex={0}
               onKeyDown={e => { if (e.key === "Enter") onOpenCase(c); }}
-              style={{ display: "flex", alignItems: "center", gap: 14, background: "var(--white)", cursor: "pointer",
+              className="mu-rise"
+              style={{ animationDelay: `${i * 35}ms`, display: "flex", alignItems: "center", gap: 14, background: "var(--white)", cursor: "pointer",
                 border: "1px solid var(--ink-100)", borderInlineStart: `4px solid ${prio.color}`, borderRadius: 14,
                 padding: "13px 16px", boxShadow: "var(--shadow-card)", transition: "transform .12s, box-shadow .12s" }}
               onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "var(--shadow-md)"; }}

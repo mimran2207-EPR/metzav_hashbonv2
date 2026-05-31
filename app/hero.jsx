@@ -55,7 +55,9 @@ function BalanceCard({ totals, year, onPay }) {
   ];
   return (
     <Card pad={22} style={{ display: "flex", flexDirection: "column", color: "#fff",
-      background: "linear-gradient(150deg,var(--teal-800) 0%,var(--teal-700) 48%,var(--teal-600) 100%)", border: "1px solid transparent"}}>
+      background: "linear-gradient(150deg,var(--teal-800) 0%,var(--teal-700) 48%,var(--teal-600) 100%)",
+      border: "1px solid transparent",
+      boxShadow: "0 18px 44px rgba(var(--teal-rgb),.32), 0 2px 6px rgba(var(--teal-rgb),.2)" }}>
       {/* decorative glow */}
       <div style={{ position: "absolute", insetInlineStart: -40, top: -50, width: 160, height: 160, borderRadius: 999,
         background: "rgba(255,255,255,.08)", pointerEvents: "none" }}/>
@@ -311,7 +313,7 @@ function YearNavigator({ year, onYear }) {
 function HeroZone({ p, totals, year, notesCount, docsCount, insights, handlers, showStrip = true, narrow = false, onYear }) {
   return (
     <div className="mu-rise" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "1.45fr 1fr 1fr", gap: 14, alignItems: "stretch" }}>
+      <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "1.15fr 1.3fr 1fr", gap: 14, alignItems: "stretch" }}>
         <IdentityCard p={p}/>
         <BalanceCard totals={totals} year={year} onPay={handlers.onPay}/>
         <AlertsCard notesCount={notesCount} docsCount={docsCount} onNotes={handlers.onNotes} onDocs={handlers.onDocs} onEnforce={handlers.onEnforce}/>
