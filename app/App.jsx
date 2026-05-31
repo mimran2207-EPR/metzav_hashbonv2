@@ -11,6 +11,7 @@ import { SectionHead, Card, Segmented, ToastHost, useMediaQuery } from './ui.jsx
 import { Icon } from './icons.jsx';
 import { PAYER, TOTALS, SERVICES, TXNS, TXN_TYPES, SUBJECTS, DOCUMENTS, AI_INSIGHTS, QUICK_ACTIONS, NOTES } from './data.jsx';
 import { ThemePicker, THEMES, generateThemeFromColor } from './table-utils.jsx';
+import { usePersistedState, loadPref, savePref } from './storage.js';
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "accent": "#2AA7B8",
@@ -24,12 +25,11 @@ function App() {
   const narrow = useMediaQuery("(max-width: 900px)"); // tablet / mobile breakpoint
   const [year, setYear] = useState(2026);
   const [entity, setEntity] = useState("all");      // selected subject filter
-  const [density, setDensity] = useState(t.density);
+  const [density, setDensity] = usePersistedState("density", t.density);
   const selectSubject = (id) => setEntity(id);
   const [notes, setNotes] = useState(NOTES);
 
-  // tweak: density sync + accent override (stays in the teal family)
-  useEffect(() => setDensity(t.density), [t.density]);
+  // tweak: accent override (stays in the teal family)
   useEffect(() => {
     document.documentElement.style.setProperty("--teal-500", t.accent);
   }, [t.accent]);
@@ -42,19 +42,23 @@ function App() {
   const [calcOpen, setCalcOpen] = useState(false);
   const [wideOpen, setWideOpen] = useState(false);
   const [wideNaxas, setWideNaxas] = useState(null);
-  const [themeId, setThemeId] = useState("teal");
+  const [themeId, setThemeId] = usePersistedState("themeId", "teal");
 
-  // Apply color theme dynamically (preset themes)
+  // Apply color theme dynamically (preset themes); custom handled below
   useEffect(() => {
-    if (themeId === "custom") return; // handled by onCustom
+    if (themeId === "custom") {
+      const hex = loadPref("customHex", "#2AA7B8");
+      Object.entries(generateThemeFromColor(hex)).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
+      return;
+    }
     const theme = THEMES.find(t => t.id === themeId) || THEMES[0];
     Object.entries(theme.vars).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
   }, [themeId]);
 
-  // Apply custom color theme from full color picker
+  // Apply custom color theme from full color picker (and remember it)
   const handleCustomTheme = (hex) => {
-    const vars = generateThemeFromColor(hex);
-    Object.entries(vars).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
+    savePref("customHex", hex);
+    Object.entries(generateThemeFromColor(hex)).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
   };
 
   // ⌘K / Ctrl+K + shortcuts

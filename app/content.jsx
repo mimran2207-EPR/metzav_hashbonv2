@@ -462,7 +462,7 @@ function TxnTable({ rows, types, compact }) {
   const [q, setQ] = useState("");
   const [dc, setDc] = useState("all");
   const { sortCol: t3Sort, sortDir: t3Dir, toggleSort: t3Toggle, applySort: t3Apply } = useColSort();
-  const { hidden: t3Hidden, toggleCol: t3ToggleCol } = useColVisibility();
+  const { hidden: t3Hidden, toggleCol: t3ToggleCol } = useColVisibility([], "t3");
   const T3_COLS = [
     { key:"date",  label:"תאריך",       align:"start", sortable:true },
     { key:"type",  label:"סוג תנועה",   align:"start", sortable:true },
@@ -472,7 +472,7 @@ function TxnTable({ rows, types, compact }) {
     { key:"addon", label:"הצמדה+ריבית", align:"end",   sortable:true },
     { key:"bal",   label:"יתרה רצה",    align:"end",   sortable:true },
   ];
-  const { order: t3Order, dragOver: t3DragOver, handlers: t3DragH } = useColOrder(T3_COLS.length);
+  const { order: t3Order, dragOver: t3DragOver, handlers: t3DragH } = useColOrder(T3_COLS.length, "t3");
   const orderedT3 = t3Order.map(i => T3_COLS[i]).filter(c => !t3Hidden.has(c.key));
 
   const t3SortVal = (r, key) => {
@@ -743,7 +743,7 @@ function AllEntitiesView({ subjects, filterSubject, density, txnTypes, onAction,
 
   // ── Level 1 sort + drag + visibility ──
   const { sortCol, sortDir, toggleSort, applySort } = useColSort();
-  const { hidden: l1Hidden, toggleCol: l1ToggleCol } = useColVisibility();
+  const { hidden: l1Hidden, toggleCol: l1ToggleCol } = useColVisibility([], "l1");
   // ── Level 2 sort + drag ──
   const { sortCol: l2SortCol, sortDir: l2SortDir, toggleSort: l2Toggle, applySort: l2Sort } = useColSort();
   const L2_MID = [
@@ -760,7 +760,7 @@ function AllEntitiesView({ subjects, filterSubject, density, txnTypes, onAction,
     { key:"charg", label:"חיובים",      align:"end",    sortable:true },
     { key:"bal",   label:"יתרה",        align:"end",    sortable:true },
   ];
-  const { order: l2ColOrder, dragOver: l2DragOver, handlers: l2DragH } = useColOrder(L2_MID.length);
+  const { order: l2ColOrder, dragOver: l2DragOver, handlers: l2DragH } = useColOrder(L2_MID.length, "l2");
   const l2OrderedMid = l2ColOrder.map(i => L2_MID[i]);
   const l2ColCount = 1 + L2_MID.length; // expand + mid
 
@@ -788,7 +788,7 @@ function AllEntitiesView({ subjects, filterSubject, density, txnTypes, onAction,
     { key: "bal",    label: "יתרה",         w: "110px", align: "end",    sortable: true },
     { key: "docs",   label: "מסמכים",       w: "72px",  align: "center", sortable: false },
   ];
-  const { order: colOrder, dragOver: l1DragOver, handlers: l1DragH } = useColOrder(L1_MID.length);
+  const { order: colOrder, dragOver: l1DragOver, handlers: l1DragH } = useColOrder(L1_MID.length, "l1");
   const orderedMid = colOrder.map(i => L1_MID[i]).filter(c => !l1Hidden.has(c.key));
   const allCols = [{ key:"idx", label:"רץ", w:"40px", align:"center" }, ...orderedMid, { key:"expand", label:"", w:"40px", align:"center" }];
   const colCount = allCols.length;

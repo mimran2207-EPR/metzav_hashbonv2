@@ -1,7 +1,8 @@
 // table-utils.jsx — shared table utilities: sort, drag-to-reorder, column visibility.
 // Used by content.jsx (levels 1-3) and wide-txns.jsx.
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Icon } from './icons.jsx';
+import { loadPref, savePref } from './storage.js';
 
 // ── Sort — 3-state cycle: none → asc ▲ → desc ▼ → none ─────────────────────
 export function useColSort() {
@@ -31,11 +32,26 @@ export function useColSort() {
   return { sortCol: state.col, sortDir: state.dir, toggleSort, applySort };
 }
 
-// ── Drag-to-reorder ───────────────────────────────────────────────────────────
-export function useColOrder(count) {
-  const [order, setOrder] = useState(() => Array.from({ length: count }, (_, i) => i));
+// ── Drag-to-reorder (persisted when storageKey given) ─────────────────────────
+export function useColOrder(count, storageKey) {
+  const [order, setOrder] = useState(() => {
+    const saved = storageKey ? loadPref(`cols_${storageKey}`, null) : null;
+    if (Array.isArray(saved) && saved.length === count && saved.every(n => Number.isInteger(n) && n < count)) return saved;
+    return Array.from({ length: count }, (_, i) => i);
+  });
+  useEffect(() => { if (storageKey) savePref(`cols_${storageKey}`, order); }, [storageKey, order]);
   const dragging = useRef(null);
   const [dragOver, setDragOver] = useState(null);
+  const move = useCallback((fromIdx, toIdx) => {
+    setOrder(prev => {
+      const next = [...prev];
+      const from = next.indexOf(fromIdx);
+      const to   = next.indexOf(toIdx);
+      if (from < 0 || to < 0) return prev;
+      next.splice(from, 1); next.splice(to, 0, fromIdx);
+      return next;
+    });
+  }, []);
   const handlers = useCallback((i) => ({
     draggable: true,
     onDragStart: (e) => { dragging.current = i; e.dataTransfer.effectAllowed = "move"; },
@@ -44,16 +60,17 @@ export function useColOrder(count) {
     onDrop:      (e) => {
       e.preventDefault(); setDragOver(null);
       if (dragging.current === null || dragging.current === i) return;
-      setOrder(prev => {
-        const next = [...prev];
-        const from = next.indexOf(dragging.current);
-        const to   = next.indexOf(i);
-        next.splice(from, 1); next.splice(to, 0, dragging.current);
-        return next;
-      });
+      move(dragging.current, i);
       dragging.current = null;
     },
-  }), []);
+    // keyboard reorder: Alt+←/→ moves the focused column
+    onKeyDown: (e) => {
+      if (!e.altKey) return;
+      const pos = order.indexOf(i);
+      if (e.key === "ArrowRight" && pos < order.length - 1) { e.preventDefault(); move(i, order[pos + 1]); }
+      else if (e.key === "ArrowLeft" && pos > 0)            { e.preventDefault(); move(i, order[pos - 1]); }
+    },
+  }), [move, order]);
   return { order, setOrder, dragOver, handlers };
 }
 
@@ -64,10 +81,22 @@ export function SortTh({ colKey, label, align, sortable, sortCol, sortDir, onSor
   const nextAction = !isSorted ? "לחץ למיון עולה ▲"
     : sortDir === "asc"  ? "לחץ למיון יורד ▼"
     :                      "לחץ לביטול מיון";
+  // merge drag's onKeyDown (Alt+←/→ reorder) with sort's Enter/Space
+  const dragKeyDown = dragHandlers && dragHandlers.onKeyDown;
+  const onKeyDown = (e) => {
+    if (sortable && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); onSort(colKey); }
+    if (dragKeyDown) dragKeyDown(e);
+  };
+  const ariaSort = isSorted ? (sortDir === "asc" ? "ascending" : "descending") : (sortable ? "none" : undefined);
   return (
     <th onClick={sortable ? () => onSort(colKey) : undefined}
       {...dragHandlers}
-      title={sortable ? nextAction : "גרור לשינוי מיקום"}
+      onKeyDown={onKeyDown}
+      tabIndex={(sortable || dragHandlers) ? 0 : undefined}
+      data-focusring
+      role="columnheader"
+      aria-sort={ariaSort}
+      title={(sortable ? nextAction : "גרור / Alt+חיצים לשינוי מיקום")}
       style={{ textAlign: align || "start", padding: "9px 10px", fontSize: 11.5, fontWeight: 700,
         color: "rgba(255,255,255,.95)", whiteSpace: "nowrap", overflow: "hidden",
         cursor: sortable ? "pointer" : "grab",
@@ -138,9 +167,13 @@ export function ColumnPicker({ cols, hidden, onToggle }) {
   );
 }
 
-// ── useColVisibility — hidden columns state ───────────────────────────────────
-export function useColVisibility(initialHidden = []) {
-  const [hidden, setHidden] = useState(new Set(initialHidden));
+// ── useColVisibility — hidden columns state (persisted when storageKey given) ──
+export function useColVisibility(initialHidden = [], storageKey) {
+  const [hidden, setHidden] = useState(() => {
+    const saved = storageKey ? loadPref(`hide_${storageKey}`, null) : null;
+    return new Set(Array.isArray(saved) ? saved : initialHidden);
+  });
+  useEffect(() => { if (storageKey) savePref(`hide_${storageKey}`, [...hidden]); }, [storageKey, hidden]);
   const toggle = useCallback((key) => setHidden(prev => {
     const next = new Set(prev);
     if (next.has(key)) next.delete(key); else next.add(key);

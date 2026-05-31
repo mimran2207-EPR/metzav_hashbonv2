@@ -88,8 +88,8 @@ function WideTxnScreen({ open, onClose, payer, filterNaxas }) {
 
   // Sort + drag + column visibility for the ledger table
   const { sortCol: wSortCol, sortDir: wSortDir, toggleSort: wToggleSort, applySort: wApplySort } = useColSort();
-  const { order: wColOrder, dragOver: wDragOver, handlers: wDragH } = useColOrder(LEDGER_COLUMNS.length);
-  const { hidden: wHidden, toggleCol: wToggleCol } = useColVisibility();
+  const { order: wColOrder, dragOver: wDragOver, handlers: wDragH } = useColOrder(LEDGER_COLUMNS.length, "wide");
+  const { hidden: wHidden, toggleCol: wToggleCol } = useColVisibility([], "wide");
   const orderedLedgerCols = wColOrder.map(i => LEDGER_COLUMNS[i]).filter(c => !wHidden.has(c.key));
 
   const sugs = useMemo(() => [...new Set(LEDGER.map(r => r.sug))], []);
