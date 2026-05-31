@@ -79,8 +79,16 @@ function getSubItems(subject) {
     charges: [{ id: `${subject.id}-${i + 1}-c`, name: subject.name, balance: per }],
   }));
 }
+// chargeRows — a charge's transactions, from an inline `rows` (per-case data)
+// or the global TXNS map (the demo payer), else empty.
+function chargeRows(charge) {
+  if (charge.rows) return charge.rows;
+  if (charge.txns && TXNS[charge.txns]) return TXNS[charge.txns];
+  return [];
+}
 function chargeBalance(charge) {
-  if (charge.txns && TXNS[charge.txns]) { const r = TXNS[charge.txns]; return r[r.length - 1].bal; }
+  const r = chargeRows(charge);
+  if (r.length) return r[r.length - 1].bal;
   return charge.balance || 0;
 }
 function Crumb({ label, kind, onClick, last }) {
@@ -552,11 +560,12 @@ function TxnTable({ rows, types, compact }) {
 }
 
 // buildEntityRows — flatten all subjects into a list of entity objects (level 1 rows).
-function buildEntityRows(subjects, filterSubject) {
+// detailsMap defaults to the demo payer's SUBJECT_DETAILS; per-case data passes its own.
+function buildEntityRows(subjects, filterSubject, detailsMap = SUBJECT_DETAILS) {
   const result = [];
   const list = filterSubject ? [filterSubject] : subjects;
   list.forEach(subj => {
-    const authored = SUBJECT_DETAILS[subj.id];
+    const authored = detailsMap[subj.id];
     if (authored) {
       authored.subItems.forEach(si => result.push({
         id: si.id, name: si.name, meta: si.meta || "", subject: subj,
@@ -726,13 +735,13 @@ function HoldersHistoryModal({ entity, onClose, onOpenHolder }) {
 // Level 1: entity row with named columns (matches legacy MASTER screen layout).
 // Level 2: PropertyContextPanel + charges sub-table, inline below the row.
 // Level 3: TxnTable per charge, inline below the charge row.
-function AllEntitiesView({ subjects, filterSubject, density, txnTypes, onAction, onOpenWide }) {
+function AllEntitiesView({ subjects, filterSubject, density, txnTypes, onAction, onOpenWide, detailsMap }) {
   const [openEntity, setOpenEntity] = useState(null);
   const [openCharge, setOpenCharge] = useState(null);
   const [typesModal, setTypesModal] = useState(null);   // entity for property-types modal
   const [holdersModal, setHoldersModal] = useState(null); // entity for holders modal
   const compact = density === "compact";
-  const entities = buildEntityRows(subjects, filterSubject);
+  const entities = buildEntityRows(subjects, filterSubject, detailsMap);
   const grandTotal = entities.reduce((sum, e) => sum + e.charges.reduce((a, c) => a + chargeBalance(c), 0), 0);
   const cellPad = compact ? "7px 10px" : "10px 12px";
 
@@ -1002,11 +1011,11 @@ function AllEntitiesView({ subjects, filterSubject, density, txnTypes, onAction,
                               {(() => {
                                 // Sort charges for Level 2
                                 const sorted2 = l2SortCol ? l2Sort(entity.charges, (c, key) => {
-                                  const rows = c.txns ? (TXNS[c.txns] || []) : [];
+                                  const rows = chargeRows(c);
                                   return l2SortVal(c, rows, key);
                                 }) : entity.charges;
                                 return sorted2.map((c, ci) => {
-                                const txnRows = c.txns ? (TXNS[c.txns] || []) : [];
+                                const txnRows = chargeRows(c);
                                 const bal = chargeBalance(c);
                                 const paid = txnRows.filter(r => r.dc === "ז").reduce((a, r) => a + (r.nominal || r.addon || 0), 0);
                                 const charged = txnRows.filter(r => r.dc === "ח").reduce((a, r) => a + (r.nominal || r.addon || 0), 0);

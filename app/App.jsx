@@ -1,5 +1,5 @@
 // App.jsx — composes the מצב חשבון workspace + state management
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { TopBar, FooterBand } from './chrome.jsx';
 import { HeroZone, ActionBar } from './hero.jsx';
 import { SubjectStrip, AllEntitiesView } from './content.jsx';
@@ -11,7 +11,7 @@ import { FlowHost } from './flows.jsx';
 import { useTweaks, TweaksPanel, TweakSection, TweakRadio, TweakColor, TweakToggle } from './tweaks-panel.jsx';
 import { SectionHead, Card, Segmented, ToastHost, useMediaQuery } from './ui.jsx';
 import { Icon } from './icons.jsx';
-import { PAYER, TOTALS, SERVICES, TXNS, TXN_TYPES, SUBJECTS, DOCUMENTS, AI_INSIGHTS, QUICK_ACTIONS, NOTES, WORKLIST, STATUS, CASE_TIMELINE, TASKS } from './data.jsx';
+import { PAYER, TOTALS, SERVICES, TXNS, TXN_TYPES, SUBJECTS, DOCUMENTS, AI_INSIGHTS, QUICK_ACTIONS, NOTES, WORKLIST, STATUS, CASE_TIMELINE, TASKS, buildCaseData } from './data.jsx';
 import { ThemePicker, THEMES, generateThemeFromColor } from './table-utils.jsx';
 import { usePersistedState, loadPref, savePref } from './storage.js';
 
@@ -85,8 +85,10 @@ function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const activeSubject = SUBJECTS.find(s => s.id === entity) || null;
   const isDemoCase = activeCase.id === PAYER.payerNo;
+  const caseData = useMemo(() => buildCaseData(activeCase), [activeCase]);
+  const caseSubjects = caseData.subjects;
+  const activeSubject = caseSubjects.find(s => s.id === entity) || null;
   // case-aware payer identity + totals (demo case = full data; others = proportional split)
   const activePayer = isDemoCase ? PAYER : { ...PAYER, name: activeCase.name, payerNo: activeCase.id, status: STATUS[activeCase.status].label };
   const totals = isDemoCase ? TOTALS : (() => {
@@ -181,7 +183,6 @@ function App() {
         </button>
         <span style={{ fontSize: 12.5, color: "var(--ink-muted)" }}>
           תיק <b className="num" style={{ color: "var(--ink-700)" }}>{activePayer.payerNo}</b>
-          {!isDemoCase && <span style={{ marginInlineStart: 8, fontSize: 11, background: "var(--warn-bg)", color: "var(--warn-fg)", borderRadius: 999, padding: "2px 9px", fontWeight: 600 }}>נתוני דמו מוצגים למבנה התיק</span>}
         </span>
       </div>
 
@@ -233,7 +234,7 @@ function App() {
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div>
             <SectionHead title="ישויות ונושאים" sub={`מס׳ משלם ${activePayer.payerNo} · ת.ז ${PAYER.taz}`}/>
-            <SubjectStrip subjects={SUBJECTS} selected={entity} onSelect={selectSubject}/>
+            <SubjectStrip subjects={caseSubjects} selected={entity} onSelect={selectSubject}/>
           </div>
           <Card pad={0} style={{ overflow: "visible" }}>
             <div style={{ padding: "18px 20px 0" }}>
@@ -241,7 +242,7 @@ function App() {
                 title={entity === "all" ? "כל הישויות" : activeSubject ? activeSubject.name : "ישויות"}
                 icon="sigma"
                 sub={entity === "all"
-                  ? `${SUBJECTS.reduce((a, s) => a + s.count, 0)} ישויות · לחץ ישות לפעולות ותנועות`
+                  ? `${caseSubjects.reduce((a, s) => a + s.count, 0)} ישויות · לחץ ישות לפעולות ותנועות`
                   : activeSubject ? `${activeSubject.count} ${activeSubject.unit} · לחץ ישות לפרטים` : ""}
                 right={
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -258,7 +259,8 @@ function App() {
             </div>
             <div style={{ padding: "0 20px 20px" }}>
               <AllEntitiesView
-                subjects={SUBJECTS}
+                subjects={caseSubjects}
+                detailsMap={caseData.details}
                 filterSubject={activeSubject}
                 density={density}
                 txnTypes={TXN_TYPES}

@@ -345,8 +345,46 @@ const CASE_TIMELINE = [
   { id: 4, type: "open",    icon: "user",   tone: "teal", time: "01/01/2026 00:00", title: "תיק גבייה נפתח לשנת 2026", detail: "חיוב שנתי הופק · יתרת פתיחה ₪7,980" },
 ];
 
+// synthRows — deterministic transaction list for a charge of a given balance.
+function synthRows(balance) {
+  if (balance <= 0) return [{ date: "01/01/2026", type: 8, ref: "—", dc: "ח", nominal: 0, addon: 0, bal: 0 }];
+  const open = Math.round(balance * 0.55), annual = Math.round(balance * 1.55), paid = annual - balance;
+  return [
+    { date: "01/01/2026", type: 8,  ref: "—",         dc: "ח", nominal: open,            addon: 0, bal: open },
+    { date: "01/01/2026", type: 1,  ref: "חיוב שנתי",  dc: "ח", nominal: annual - open,    addon: 0, bal: annual },
+    { date: "15/03/2026", type: 100, ref: "BANK",      dc: "ז", nominal: paid,             addon: 0, bal: balance },
+  ];
+}
+
+// buildCaseData — per-case entities/charges/transactions. The demo payer returns
+// the rich global data; every other case gets its own set summing to its balance,
+// so the drill view always reflects the open case (no more "demo data" mismatch).
+function buildCaseData(c) {
+  if (!c || c.id === PAYER.payerNo) return { subjects: SUBJECTS, details: SUBJECT_DETAILS };
+  const B = c.balance, idNum = (c.id.replace(/\D/g, "") || "1");
+  const holders = [{ name: c.name, payerNo: c.id, from: "01/2020", to: null, current: true, reason: "רכישה" }];
+  const isBiz = (c.tags || []).includes("עסק");
+  const p1 = B > 0 && isBiz ? Math.round(B * 0.6) : B, p2 = B - p1;
+  const subItems = [{
+    id: idNum, name: isBiz ? "נכס מסחרי ראשי" : "דירת מגורים", meta: "כתובת התיק",
+    propertyTypes: [{ code: "100", desc: isBiz ? "מבנה מסחרי" : "בית מגורים", area: 90, unit: 'מ"ר' }], holders,
+    charges: [
+      { id: idNum + "-arn", code: 1, name: "ארנונה",      srcYear: 2026, discount: null, arrangement: c.status === "arrangement" ? 100 : null, tracking: false, rows: synthRows(Math.round(p1 * 0.72)) },
+      { id: idNum + "-shm", code: 2, name: "אגרת שמירה", srcYear: 2026, discount: null, arrangement: null, tracking: false, rows: synthRows(p1 - Math.round(p1 * 0.72)) },
+    ],
+  }];
+  if (p2 > 0) subItems.push({
+    id: String(Number(idNum) + 1), name: "נכס נוסף", meta: "נכס משני", propertyTypes: [{ code: "190", desc: "מחסן/אחסנה", area: 35, unit: 'מ"ר' }], holders,
+    charges: [{ id: idNum + "-b", code: 1, name: "ארנונה", srcYear: 2026, discount: null, arrangement: null, tracking: false, rows: synthRows(p2) }],
+  });
+  return {
+    subjects: [{ id: "arnona", code: 3, name: "ארנונה", icon: "building", count: subItems.length, unit: "נכסים", balance: B }],
+    details: { arnona: { subItems } },
+  };
+}
+
 export {
   PAYER, ENTITIES, SUBJECTS, SUBJECT_DETAILS, SERVICES, TOTALS, TXNS, TXN_TYPES, YEARS, YEAR_BALANCES,
   AI_INSIGHTS, AI_ACTIONS, QUICK_ACTIONS, NOTES, DOCUMENTS, LEDGER, LEDGER_COLUMNS, fmt,
-  WORKLIST, STATUS, CASE_TIMELINE, TASKS,
+  WORKLIST, STATUS, CASE_TIMELINE, TASKS, buildCaseData,
 };
