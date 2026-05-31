@@ -327,14 +327,43 @@ const WORKLIST = [
     last: "חוב סולק · 18/05", nba: { label: "סגור תיק", flow: null }, tags: ["שולם"] },
 ];
 
-// TASKS — the clerk's follow-up list (BPM tasks). Some are seeded; flows can
-// auto-create follow-ups (e.g. an arrangement creates a "track first payment" task).
+// CLERKS — who's logged in and their colleagues.
+const CURRENT_CLERK = { id: "shmon", name: "שמעון עמר", role: "פקיד גבייה", avatar: "שע" };
+const CLERKS = [
+  { id: "shmon",  name: "שמעון עמר", role: "פקיד גבייה" },
+  { id: "ronit",  name: "רונית כהן",  role: "מוקדנית" },
+  { id: "system", name: "מערכת",      role: "אוטומטי" },
+];
+
+// TASK_TYPES — category of each task with an icon, a colour, and the flow it triggers.
+const TASK_TYPES = {
+  call:       { label: "שיחה טלפונית",   icon: "notes",   color: "var(--teal-600)",  bg: "var(--teal-50)",  flow: null },
+  letter:     { label: "שליחת מכתב",     icon: "send",    color: "var(--info-fg)",   bg: "var(--info-bg)",  flow: "letter" },
+  payment:    { label: "גביית תשלום",    icon: "card",    color: "var(--ok-fg)",     bg: "var(--ok-bg)",    flow: "payment" },
+  arrangement:{ label: "הסדר תשלומים",  icon: "wallet",  color: "var(--teal-700)",  bg: "var(--teal-50)",  flow: "arrangement" },
+  discount:   { label: "טיפול בהנחה",   icon: "wallet",  color: "var(--warn-fg)",   bg: "var(--warn-bg)",  flow: "discount" },
+  approve:    { label: "אישור מנהל",     icon: "shield",  color: "var(--err-fg)",    bg: "var(--err-bg)",   flow: "enforce" },
+  followup:   { label: "מעקב",           icon: "history", color: "var(--ink-600)",   bg: "var(--ink-100)",  flow: null },
+  credit:     { label: "זיכוי חיוב",    icon: "receipt", color: "var(--ok-fg)",     bg: "var(--ok-bg)",    flow: "credit" },
+  holder:     { label: "החלפת מחזיק",   icon: "user",    color: "var(--teal-600)",  bg: "var(--teal-50)",  flow: "holder" },
+  docs:       { label: "טיפול במסמכים", icon: "docs",    color: "var(--ink-500)",   bg: "var(--ink-100)",  flow: null },
+};
+
+// TASKS — the clerk's daily work queue. Rich: type, case link, balance, channel, note.
 const TASKS = [
-  { id: 1, title: "ליצור קשר טלפוני — חוב ארנונה",      caseName: "ישראל לדוגמה", caseId: "999-DEMO",   due: "02/06/2026", overdue: true,  assignee: "שמעון עמר", priority: "high", done: false },
-  { id: 2, title: "אישור מנהל לעיקול חשבון בנק",        caseName: "כהן דוד",      caseId: "028841200", due: "01/06/2026", overdue: true,  assignee: "שמעון עמר", priority: "crit", done: false },
-  { id: 3, title: "לאסוף מסמכי ועדת הנחות",             caseName: "לוי שרה",      caseId: "301992847", due: "03/06/2026", overdue: false, assignee: "רונית כהן", priority: "med",  done: false },
-  { id: 4, title: "מעקב תשלום ראשון בהסדר",             caseName: "מזרחי רחל",     caseId: "118402665", due: "05/07/2026", overdue: false, assignee: "רונית כהן", priority: "med",  done: false },
-  { id: 5, title: "סגירת תיק — חוב סולק",               caseName: "ביטון נעמה",    caseId: "550113907", due: "20/05/2026", overdue: false, assignee: "רונית כהן", priority: "low",  done: true },
+  { id:  1, type: "approve",    title: "אישור מנהל לעיקול חשבון בנק",          caseName: "כהן דוד",         caseId: "028841200", balance: 28960, due: "01/06/2026", overdue: true,  assignee: "shmon", priority: "crit", done: false, note: "ממתין לחתימה — תיק אכיפה ברמה 2" },
+  { id:  2, type: "call",       title: "התקשר לחידוש הסדר תשלומים שנפסק",      caseName: "ישראל לדוגמה",    caseId: "999-DEMO",  balance: 13574, due: "02/06/2026", overdue: true,  assignee: "shmon", priority: "high", done: false, note: "פנה בעצמו 22/05, לא ענה מאז" },
+  { id:  3, type: "letter",     title: "שלח התראה אחרונה לפני אכיפה",           caseName: "דהן אורי",        caseId: "667301284", balance: 15230, due: "02/06/2026", overdue: true,  assignee: "shmon", priority: "high", done: false, note: "14 ימים עברו מהמכתב הראשון" },
+  { id:  4, type: "payment",    title: "קלוט תשלום שהועבר בהעברה בנקאית",      caseName: "פרץ משה",         caseId: "442087109", balance: 760,   due: "01/06/2026", overdue: true,  assignee: "shmon", priority: "high", done: false, note: "העברה BANK-8822 ממתינה לזיהוי" },
+  { id:  5, type: "arrangement",title: "פתח הסדר תשלומים — ביקש בשיחה",        caseName: "אברהם יצחק",      caseId: "205518830", balance: 9870,  due: "03/06/2026", overdue: false, assignee: "shmon", priority: "high", done: false, note: "3 תשלומים, מועד ראשון 01/07" },
+  { id:  6, type: "discount",   title: "טפל בבקשת הנחת נכה 50%",               caseName: "ישראל לדוגמה",    caseId: "999-DEMO",  balance: 13574, due: "04/06/2026", overdue: false, assignee: "shmon", priority: "med",  done: false, note: "הגיש אישור רפואי — בדוק תקינות" },
+  { id:  7, type: "followup",   title: "מעקב תשלום 4/6 בהסדר",                 caseName: "מזרחי רחל",       caseId: "118402665", balance: 1980,  due: "05/07/2026", overdue: false, assignee: "shmon", priority: "med",  done: false, note: "תשלומים 1-3 הגיעו במועד" },
+  { id:  8, type: "docs",       title: "אסוף מסמכי ועדת הנחות",                caseName: "לוי שרה",         caseId: "301992847", balance: 4120,  due: "03/06/2026", overdue: false, assignee: "ronit", priority: "med",  done: false, note: "" },
+  { id:  9, type: "credit",     title: "בצע זיכוי כפל-חיוב ארנונה רבעון 1",    caseName: "ישראל לדוגמה",    caseId: "999-DEMO",  balance: 13574, due: "05/06/2026", overdue: false, assignee: "shmon", priority: "med",  done: false, note: "₪640 שחויבו פעמיים, ראה חשבונית 9912" },
+  { id: 10, type: "holder",     title: "עדכן מחזיק עפ\"י חוזה שכירות חדש",     caseName: "כהן דוד",         caseId: "028841200", balance: 28960, due: "06/06/2026", overdue: false, assignee: "shmon", priority: "med",  done: false, note: "שוכר חדש מ-01/06 — עדכן לפרורציה" },
+  { id: 11, type: "call",       title: "שיחת מעקב — סיכמנו על תשלום",          caseName: "דהן אורי",        caseId: "667301284", balance: 15230, due: "07/06/2026", overdue: false, assignee: "shmon", priority: "low",  done: false, note: "" },
+  { id: 12, type: "followup",   title: "ודא קבלת מכתב רשום",                   caseName: "ישראל לדוגמה",    caseId: "999-DEMO",  balance: 13574, due: "10/06/2026", overdue: false, assignee: "ronit", priority: "low",  done: false, note: "אסמכתא RR-44120" },
+  { id: 13, type: "payment",    title: "סגור תיק — חוב סולק במלואו",           caseName: "ביטון נעמה",      caseId: "550113907", balance: 0,     due: "20/05/2026", overdue: false, assignee: "ronit", priority: "low",  done: true,  note: "" },
 ];
 
 // CASE_TIMELINE — seed history for the open case (live flow events prepend to this).
@@ -386,5 +415,5 @@ function buildCaseData(c) {
 export {
   PAYER, ENTITIES, SUBJECTS, SUBJECT_DETAILS, SERVICES, TOTALS, TXNS, TXN_TYPES, YEARS, YEAR_BALANCES,
   AI_INSIGHTS, AI_ACTIONS, QUICK_ACTIONS, NOTES, DOCUMENTS, LEDGER, LEDGER_COLUMNS, fmt,
-  WORKLIST, STATUS, CASE_TIMELINE, TASKS, buildCaseData,
+  WORKLIST, STATUS, CASE_TIMELINE, TASKS, TASK_TYPES, CLERKS, CURRENT_CLERK, buildCaseData,
 };

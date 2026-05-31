@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { TopBar, FooterBand } from './chrome.jsx';
 import { HeroZone, ActionBar } from './hero.jsx';
 import { SubjectStrip, AllEntitiesView } from './content.jsx';
-import { Worklist, CaseTimeline } from './worklist.jsx';
+import { TaskBoard, CaseTimeline } from './worklist.jsx';
 import { FloatingCopilot, CommandBar } from './panels.jsx';
 import { CopilotPanel, NotesDrawer, DocsDrawer, InterestCalc, TasksDrawer } from './panels2.jsx';
 import { WideTxnScreen } from './wide-txns.jsx';
@@ -11,7 +11,7 @@ import { FlowHost } from './flows.jsx';
 import { useTweaks, TweaksPanel, TweakSection, TweakRadio, TweakColor, TweakToggle } from './tweaks-panel.jsx';
 import { SectionHead, Card, Segmented, ToastHost, useMediaQuery } from './ui.jsx';
 import { Icon } from './icons.jsx';
-import { PAYER, TOTALS, SERVICES, TXNS, TXN_TYPES, SUBJECTS, DOCUMENTS, AI_INSIGHTS, QUICK_ACTIONS, NOTES, WORKLIST, STATUS, CASE_TIMELINE, TASKS, buildCaseData } from './data.jsx';
+import { PAYER, TOTALS, SERVICES, TXNS, TXN_TYPES, SUBJECTS, DOCUMENTS, AI_INSIGHTS, QUICK_ACTIONS, NOTES, WORKLIST, STATUS, CASE_TIMELINE, TASKS, TASK_TYPES, CURRENT_CLERK, buildCaseData } from './data.jsx';
 import { ThemePicker, THEMES, generateThemeFromColor } from './table-utils.jsx';
 import { usePersistedState, loadPref, savePref } from './storage.js';
 
@@ -168,8 +168,13 @@ function App() {
             : { name: activePayer.name, no: activePayer.payerNo }}/>
 
       {view === "worklist" ? (
-        <main id="main" style={{ flex: 1 }}>
-          <Worklist onOpenCase={openCase} onRunNba={runNba} onOpenTasks={() => setTasksOpen(true)} taskCount={openTaskCount}/>
+        <main id="main" style={{ flex: 1, paddingTop: 20 }}>
+          <TaskBoard
+            tasks={tasks}
+            onToggle={toggleTask}
+            onRunFlow={(flowId, task) => openFlow(flowId, { balance: task.balance, payerName: task.caseName, subtitle: `${task.caseName} · ${task.caseId}` })}
+            onOpenCase={openCase}
+            onOpenTasks={() => setTasksOpen(true)}/>
           <FloatingCopilot onOpen={() => setCopilot(true)} insights={AI_INSIGHTS}/>
         </main>
       ) : (
