@@ -977,6 +977,7 @@ function AllEntitiesView({ subjects, filterSubject, density, txnTypes, onAction,
         <tbody>
           {sortedEntities.map((entity, i) => {
             const isOpen = openEntity === entity.id;
+            const entityBalance = entity.charges.reduce((a, c) => a + chargeBalance(c), 0);
             const rowBg = isOpen ? "var(--teal-50)" : i % 2 === 0 ? "#fff" : "var(--ink-50)";
 
             return (
