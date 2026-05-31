@@ -1,13 +1,18 @@
 // App.jsx — composes the מצב חשבון workspace + state management
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { TopBar, FooterBand } from './chrome.jsx';
 import { HeroZone, ActionBar } from './hero.jsx';
 import { SubjectStrip, AllEntitiesView } from './content.jsx';
 import { TaskBoard, CaseTimeline } from './worklist.jsx';
 import { FloatingCopilot, CommandBar } from './panels.jsx';
-import { CopilotPanel, NotesDrawer, DocsDrawer, InterestCalc, TasksDrawer } from './panels2.jsx';
-import { WideTxnScreen } from './wide-txns.jsx';
-import { FlowHost } from './flows.jsx';
+// Heavy, open-on-demand overlays — code-split so they don't bloat initial load.
+const CopilotPanel  = lazy(() => import('./panels2.jsx').then(m => ({ default: m.CopilotPanel })));
+const NotesDrawer   = lazy(() => import('./panels2.jsx').then(m => ({ default: m.NotesDrawer })));
+const DocsDrawer    = lazy(() => import('./panels2.jsx').then(m => ({ default: m.DocsDrawer })));
+const InterestCalc  = lazy(() => import('./panels2.jsx').then(m => ({ default: m.InterestCalc })));
+const TasksDrawer   = lazy(() => import('./panels2.jsx').then(m => ({ default: m.TasksDrawer })));
+const WideTxnScreen = lazy(() => import('./wide-txns.jsx').then(m => ({ default: m.WideTxnScreen })));
+const FlowHost      = lazy(() => import('./flows.jsx').then(m => ({ default: m.FlowHost })));
 import { useTweaks, TweaksPanel, TweakSection, TweakRadio, TweakColor, TweakToggle } from './tweaks-panel.jsx';
 import { SectionHead, Card, Segmented, ToastHost, useMediaQuery } from './ui.jsx';
 import { Icon } from './icons.jsx';
@@ -324,15 +329,17 @@ function App() {
 
       {t.showCityscape ? <FooterBand/> : <div style={{ height: 40 }}/>}
 
-      {/* overlays */}
+      {/* overlays — lazy-loaded; only mounted (and their chunk fetched) when open */}
       <CommandBar open={cmdOpen} onClose={() => setCmdOpen(false)} onRun={runCommand}/>
-      <CopilotPanel open={copilot} onClose={() => setCopilot(false)} onRunFlow={(id) => openFlow(id)}/>
-      <NotesDrawer open={notesOpen} onClose={() => setNotesOpen(false)} notes={notes} onAdd={addNote}/>
-      <DocsDrawer open={docsOpen} onClose={() => setDocsOpen(false)} docs={DOCUMENTS}/>
-      <TasksDrawer open={tasksOpen} onClose={() => setTasksOpen(false)} tasks={tasks} onToggle={toggleTask} onAdd={addTask}/>
-      <InterestCalc open={calcOpen} onClose={() => setCalcOpen(false)} baseNominal={TOTALS.nominal}/>
-      <WideTxnScreen open={wideOpen} onClose={() => { setWideOpen(false); setWideNaxas(null); }} payer={PAYER} filterNaxas={wideNaxas}/>
-      <FlowHost flow={flow} onClose={() => setFlow(null)} onComplete={completeFlow}/>
+      <Suspense fallback={null}>
+        {copilot   && <CopilotPanel open onClose={() => setCopilot(false)} onRunFlow={(id) => openFlow(id)}/>}
+        {notesOpen && <NotesDrawer open onClose={() => setNotesOpen(false)} notes={notes} onAdd={addNote}/>}
+        {docsOpen  && <DocsDrawer open onClose={() => setDocsOpen(false)} docs={DOCUMENTS}/>}
+        {tasksOpen && <TasksDrawer open onClose={() => setTasksOpen(false)} tasks={tasks} onToggle={toggleTask} onAdd={addTask}/>}
+        {calcOpen  && <InterestCalc open onClose={() => setCalcOpen(false)} baseNominal={TOTALS.nominal}/>}
+        {wideOpen  && <WideTxnScreen open onClose={() => { setWideOpen(false); setWideNaxas(null); }} payer={PAYER} filterNaxas={wideNaxas}/>}
+        {flow      && <FlowHost flow={flow} onClose={() => setFlow(null)} onComplete={completeFlow}/>}
+      </Suspense>
       <ToastHost/>
 
       <TweaksPanel>
