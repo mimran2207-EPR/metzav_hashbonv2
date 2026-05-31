@@ -133,7 +133,7 @@ function AlertsCard({ notesCount, docsCount, onNotes, onDocs, onEnforce }) {
 // list (that lives in the left column's תובנות card), it surfaces the single
 // highest-severity insight in full, with a count of the rest — no truncation.
 const INSIGHT_SEVERITY = { crit: 0, warn: 1, good: 2 };
-function AIStrip({ insights, onCopilot }) {
+function AIStrip({ insights, onCopilot, onAction }) {
   const sorted = [...insights].sort((a, b) => (INSIGHT_SEVERITY[a.tone] ?? 9) - (INSIGHT_SEVERITY[b.tone] ?? 9));
   const lead = sorted[0];
   const rest = sorted.length - 1;
@@ -158,12 +158,22 @@ function AIStrip({ insights, onCopilot }) {
           </span>
           <span style={{ fontSize: 13.5, fontWeight: 500, color: "var(--ink-800)", minWidth: 0,
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{lead.text}</span>
+          {lead.action && onAction && (
+            <button data-focusring onClick={() => onAction(lead.action.flow)}
+              title="הפעלת הפעולה המומלצת"
+              style={{ flex: "none", display: "inline-flex", alignItems: "center", gap: 5,
+                border: "1px solid var(--teal-300)", background: "var(--teal-50)", color: "var(--teal-700)",
+                borderRadius: 999, padding: "5px 12px", cursor: "pointer", fontFamily: "var(--font)",
+                fontSize: 12.5, fontWeight: 700, whiteSpace: "nowrap" }}>
+              <Icon name="sparkle" size={12} color="var(--teal-600)"/> {lead.action.label}
+            </button>
+          )}
           {rest > 0 && (
             <button data-focusring onClick={onCopilot} aria-label={`${rest} תובנות נוספות — פתח Copilot`}
               style={{ flex: "none", border: "1px solid var(--ink-200)",
               background: "var(--ink-50)", borderRadius: 999, padding: "4px 11px", cursor: "pointer", fontFamily: "var(--font)",
               fontSize: 13, fontWeight: 600, color: "var(--ink-muted)", whiteSpace: "nowrap" }}>
-              <span className="num">{rest}</span> תובנות נוספות
+              <span className="num">{rest}</span> נוספות
             </button>
           )}
         </div>
@@ -307,7 +317,7 @@ function HeroZone({ p, totals, year, notesCount, docsCount, insights, handlers, 
         <AlertsCard notesCount={notesCount} docsCount={docsCount} onNotes={handlers.onNotes} onDocs={handlers.onDocs} onEnforce={handlers.onEnforce}/>
       </div>
       <YearNavigator year={year} onYear={onYear}/>
-      {showStrip && <AIStrip insights={insights} onCopilot={handlers.onCopilot}/>}
+      {showStrip && <AIStrip insights={insights} onCopilot={handlers.onCopilot} onAction={handlers.onFlow}/>}
     </div>
   );
 }

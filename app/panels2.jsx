@@ -4,7 +4,7 @@ import { Icon } from './icons.jsx';
 import { Sheet, PillButton, Chip } from './ui.jsx';
 import { fmt, PAYER } from './data.jsx';
 
-function CopilotPanel({ open, onClose }) {
+function CopilotPanel({ open, onClose, onRunFlow }) {
   const [msgs, setMsgs] = useState([
     { who: "ai", text: `שלום שמעון. אני כאן כדי לעזור עם תיק המשלם ${PAYER.name}. אפשר לשאול אותי כל דבר על החוב, או לבחור הצעה למטה.`, cites: [] },
   ]);
@@ -20,10 +20,12 @@ function CopilotPanel({ open, onClose }) {
     "הצע הסדר תשלומים": {
       text: "בהתבסס על היסטוריית תשלומים אמינה (4/5 במועד), מומלץ הסדר של 6 תשלומים חודשיים בסך ₪2,262 כל אחד, החל מ-01/07/2026. ההסדר מקפיא ריבית עתידית כל עוד התשלומים בזמן.",
       cites: ["היסטוריית תנועות 2024–2026", "מדיניות הסדרים · סעיף 4.2"],
+      action: { label: "פתח אשף הסדר תשלומים", flow: "arrangement" },
     },
     "נסח מכתב התראה": {
       text: "טיוטת מכתב מוכנה: \u201cהנדון: יתרת חוב בסך ₪13,574 בגין ארנונה ואגרות. הינך נדרש להסדיר את החוב תוך 14 יום, אחרת יינקטו הליכי אכיפה לפי פקודת המסים (גבייה).\u201d רוצה שאשלח לאישור מנהל?",
       cites: ["תבנית מכתב 1 · מח׳ גבייה"],
+      action: { label: "נסח ושלח מכתב", flow: "letter" },
     },
   };
   const suggestions = Object.keys(canned);
@@ -38,9 +40,10 @@ function CopilotPanel({ open, onClose }) {
     setTimeout(() => {
       const a = canned[q] || { text: "ניתחתי את הבקשה מול נתוני המשלם. ניתן לחדד את השאלה או לבחור אחת ההצעות המוכנות למעלה.", cites: ["תיק המשלם 999-DEMO"] };
       setTyping(false);
-      setMsgs(m => [...m, { who: "ai", text: a.text, cites: a.cites }]);
+      setMsgs(m => [...m, { who: "ai", text: a.text, cites: a.cites, action: a.action }]);
     }, 1100);
   };
+  const runFlow = (flow) => { onRunFlow && onRunFlow(flow); onClose(); };
 
   return (
     <Sheet open={open} onClose={onClose} side="start" width={440} title="AI Copilot" sub={`עוזר הגבייה · ${PAYER.name}`}
@@ -82,6 +85,16 @@ function CopilotPanel({ open, onClose }) {
                   </span>
                 ))}
               </div>
+            )}
+            {m.action && (
+              <button data-focusring onClick={() => runFlow(m.action.flow)}
+                style={{ display: "inline-flex", alignItems: "center", gap: 7, marginTop: 10, alignSelf: "flex-start",
+                  border: "none", cursor: "pointer", borderRadius: 11, padding: "10px 16px", fontFamily: "var(--font)",
+                  fontSize: 13.5, fontWeight: 700, color: "#fff",
+                  background: "linear-gradient(135deg,var(--teal-500),var(--teal-700))",
+                  boxShadow: "0 4px 12px rgba(var(--teal-rgb),.32)" }}>
+                <Icon name="sparkle" size={15} color="#fff"/> {m.action.label} ←
+              </button>
             )}
           </div>
         ))}

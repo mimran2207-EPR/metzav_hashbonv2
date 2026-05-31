@@ -245,13 +245,16 @@ const YEAR_BALANCES = (() => {
 const AI_INSIGHTS = [
   { id: "growth", tone: "warn", icon: "trend",
     text: "החוב גדל ב-21% מתחילת השנה — ₪1,950 מתוכם ריבית והצמדה מצטברת.",
-    source: "מנוע חישוב ריבית · תנועות 30/04/2026", weight: 1 },
+    source: "מנוע חישוב ריבית · תנועות 30/04/2026", weight: 1,
+    action: { label: "הצע הסדר", flow: "arrangement" } },
   { id: "payer", tone: "good", icon: "check",
     text: "המשלם שילם 4 מתוך 5 התשלומים האחרונים במועד — פרופיל אמין להסדר.",
-    source: "היסטוריית תנועות 2024–2026", weight: 2 },
+    source: "היסטוריית תנועות 2024–2026", weight: 2,
+    action: { label: "פתח הסדר", flow: "arrangement" } },
   { id: "unpaid", tone: "crit", icon: "alert",
     text: "זוהו 2 שוברי ארנונה פתוחים לשנת 2026 (יתרת קרן ₪1,376).",
-    source: "קובץ אב משלמים · נושא 1", weight: 1 },
+    source: "קובץ אב משלמים · נושא 1", weight: 1,
+    action: { label: "שלח דרישת תשלום", flow: "letter" } },
 ];
 
 const AI_ACTIONS = [
