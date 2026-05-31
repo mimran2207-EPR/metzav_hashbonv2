@@ -253,80 +253,60 @@ export function ThemePicker({ activeId, onChange, onCustom }) {
   return (
     <div style={{ position: "relative" }}>
       <button data-focusring onClick={() => setOpen(o => !o)} title="ערכת צבעים"
-        style={{ display: "flex", alignItems: "center", gap: 7, border: "1px solid var(--ink-200)",
-          background: "var(--white)", borderRadius: 999, padding: "6px 12px 6px 8px",
-          cursor: "pointer", fontFamily: "var(--font)", fontSize: 13, fontWeight: 600, color: "var(--ink-700)" }}>
-        <span style={{ width: 18, height: 18, borderRadius: 999, background: active.dot, display: "block",
-          boxShadow: "0 2px 6px rgba(0,0,0,.2)", border: "1.5px solid rgba(0,0,0,.08)" }}/>
+        style={{ display: "flex", alignItems: "center", gap: 6, border: "1px solid var(--ink-200)",
+          background: "var(--white)", borderRadius: 999, padding: "5px 10px 5px 7px",
+          cursor: "pointer", fontFamily: "var(--font)", fontSize: 12.5, fontWeight: 600, color: "var(--ink-700)" }}>
+        <span style={{ width: 16, height: 16, borderRadius: 999, background: active.dot, display: "block",
+          boxShadow: "0 1px 4px rgba(0,0,0,.18)", border: "1.5px solid rgba(0,0,0,.08)", flex: "none" }}/>
         {active.name}
-        <Icon name="chevdown" size={13} color="var(--ink-400)"/>
+        <Icon name="chevdown" size={12} color="var(--ink-400)"/>
       </button>
 
       {open && (
         <>
           <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 9000 }}/>
-          <div className="mu-rise" style={{ position: "absolute", insetInlineEnd: 0, top: "calc(100% + 6px)", zIndex: 9001,
-            background: "#fff", border: "1px solid var(--ink-200)", borderRadius: 14, boxShadow: "var(--shadow-lg)",
-            padding: "12px", display: "flex", flexDirection: "column", gap: 4, minWidth: 200 }}>
+          <div className="mu-rise" style={{ position: "absolute", insetInlineEnd: 0, top: "calc(100% + 5px)", zIndex: 9001,
+            background: "#fff", border: "1px solid var(--ink-200)", borderRadius: 12, boxShadow: "var(--shadow-lg)",
+            padding: "8px 8px 10px", display: "flex", flexDirection: "column", gap: 2, minWidth: 170 }}>
 
-            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--ink-muted)", marginBottom: 4 }}>ערכת צבעים</div>
-
-            {/* Preset themes */}
+            {/* Preset themes — compact dots grid */}
+            <div style={{ fontSize: 10.5, fontWeight: 700, color: "var(--ink-muted)", padding: "0 4px 4px" }}>ערכת צבעים</div>
             {THEMES.map(t => (
               <button key={t.id} onClick={() => { onChange(t.id); setOpen(false); }}
-                style={{ display: "flex", alignItems: "center", gap: 10, border: "none", cursor: "pointer",
-                  borderRadius: 8, padding: "7px 10px", fontFamily: "var(--font)", fontSize: 13,
+                style={{ display: "flex", alignItems: "center", gap: 8, border: "none", cursor: "pointer",
+                  borderRadius: 7, padding: "5px 8px", fontFamily: "var(--font)", fontSize: 12.5,
                   background: t.id === activeId ? "var(--ink-50)" : "transparent",
                   fontWeight: t.id === activeId ? 700 : 500, color: "var(--ink-800)", textAlign: "start",
                   transition: "background .12s" }}>
-                <span style={{ width: 22, height: 22, borderRadius: 999, background: t.dot, flex: "none",
+                <span style={{ width: 18, height: 18, borderRadius: 999, background: t.dot, flex: "none",
                   border: "1.5px solid rgba(0,0,0,.08)",
-                  boxShadow: t.id === activeId ? `0 0 0 3px ${t.dot}55` : "none" }}/>
+                  boxShadow: t.id === activeId ? `0 0 0 2px ${t.dot}44` : "none" }}/>
                 {t.name}
-                {t.id === activeId && <Icon name="check" size={13} color="var(--ink-600)" style={{ marginInlineStart: "auto" }}/>}
+                {t.id === activeId && <Icon name="check" size={12} color="var(--ink-500)" style={{ marginInlineStart: "auto" }}/>}
               </button>
             ))}
 
             {/* Divider */}
             <div style={{ height: 1, background: "var(--ink-100)", margin: "4px 0" }}/>
 
-            {/* Color swatches grid — quick picks */}
-            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--ink-muted)", marginBottom: 4 }}>צבע מותאם אישית</div>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 4 }}>
+            {/* Custom swatches — smaller */}
+            <div style={{ fontSize: 10.5, fontWeight: 700, color: "var(--ink-muted)", padding: "0 4px 4px" }}>מותאם אישית</div>
+            <div style={{ display: "flex", gap: 5, flexWrap: "wrap", padding: "0 4px 6px" }}>
               {["#E74C3C","#E67E22","#F1C40F","#2ECC71","#1ABC9C","#3498DB","#9B59B6","#E91E63","#795548","#607D8B","#FF5722","#00BCD4"].map(hex => (
                 <button key={hex} onClick={() => { handleCustomChange(hex); onChange("custom"); }}
                   title={hex}
-                  style={{ width: 22, height: 22, borderRadius: 6, background: hex, border: customHex===hex&&activeId==="custom"?"2px solid var(--ink-800)":"2px solid transparent",
-                    cursor: "pointer", padding: 0, transition: "transform .1s", flexShrink: 0 }}/>
+                  style={{ width: 18, height: 18, borderRadius: 5, background: hex,
+                    border: customHex===hex&&activeId==="custom"?"2px solid var(--ink-800)":"1.5px solid rgba(0,0,0,.1)",
+                    cursor: "pointer", padding: 0, flexShrink: 0 }}/>
               ))}
             </div>
 
-            {/* Full color picker input */}
-            <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer",
-              borderRadius: 8, padding: "8px 10px", border: "1px dashed var(--ink-300)",
-              background: activeId === "custom" ? "var(--ink-50)" : "transparent",
-              transition: "background .12s" }}>
-              <span style={{ width: 28, height: 28, borderRadius: 8, background: customHex, flex: "none",
-                border: "1.5px solid rgba(0,0,0,.12)", boxShadow: "0 2px 6px rgba(0,0,0,.15)",
-                position: "relative", overflow: "hidden" }}>
-                {/* color wheel pattern */}
-                <span style={{ position:"absolute", inset:0, background:"conic-gradient(red,yellow,lime,cyan,blue,magenta,red)", opacity:.4, borderRadius:8 }}/>
-              </span>
-              <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: "var(--ink-700)", fontFamily: "var(--font)" }}>
-                בחר כל צבע...
-                <span className="num" style={{ display:"block", fontSize:11, color:"var(--ink-muted)" }}>{customHex}</span>
-              </span>
-              <input type="color" value={customHex}
-                onChange={e => { handleCustomChange(e.target.value); onChange("custom"); }}
-                style={{ width: 0, height: 0, opacity: 0, position: "absolute", pointerEvents: "none" }}/>
-              <span onClick={e => { e.currentTarget.previousElementSibling.previousElementSibling.click(); }}
-                style={{ display:"none" }}/>
-            </label>
-            {/* Trigger for color picker — visible button */}
+            {/* Full color picker — compact */}
             <input type="color" value={customHex}
               onChange={e => { handleCustomChange(e.target.value); onChange("custom"); }}
-              style={{ width:"100%", height:34, borderRadius:8, border:"1px solid var(--ink-300)",
-                cursor:"pointer", background:"transparent", padding:"2px 4px" }}/>
+              title="בחר כל צבע"
+              style={{ width:"calc(100% - 8px)", height:28, borderRadius:7, border:"1px solid var(--ink-300)",
+                cursor:"pointer", background:"transparent", padding:"2px 4px", margin:"0 4px" }}/>
           </div>
         </>
       )}
