@@ -8,6 +8,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Icon } from './icons.jsx';
 import { LEDGER, LEDGER_COLUMNS, fmt } from './data.jsx';
 import { useColSort, useColOrder, SortTh, ColumnPicker, useColVisibility } from './table-utils.jsx';
+import { dateKey } from './dates.js';
 
 const TABS = [
   "הצגת תנועות", "הצגת תשלומים", "נכסים מרוכז", "טיפול בשוברים",
@@ -104,8 +105,7 @@ function WideTxnScreen({ open, onClose, payer, filterNaxas }) {
       if (checks["ללא יתרת פתיחה"] && x.type === 8) return false;
       return true;
     });
-    const toNum = d => { const [a, b, c] = String(d).split("/").map(Number); return c * 1e4 + b * 1e2 + a; };
-    if (sort === "terech") r = [...r].sort((a, b) => toNum(a.terech) - toNum(b.terech));
+    if (sort === "terech") r = [...r].sort((a, b) => dateKey(a.terech) - dateKey(b.terech));
     else if (sort === "itra") r = [...r].sort((a, b) => b.itra - a.itra);
     else if (sort === "sug") r = [...r].sort((a, b) => a.sug.localeCompare(b.sug, "he"));
     return r;

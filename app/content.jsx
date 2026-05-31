@@ -3,6 +3,7 @@ import { Icon } from './icons.jsx';
 import { Chip, Segmented } from './ui.jsx';
 import { fmt, SUBJECT_DETAILS, TXNS, QUICK_ACTIONS } from './data.jsx';
 import { useColSort, useColOrder, SortTh, ColumnPicker, useColVisibility } from './table-utils.jsx';
+import { dateKey } from './dates.js';
 import s from './ui.module.css';
 
 // SubjectCard — one subject in the carousel.
@@ -484,7 +485,7 @@ function TxnTable({ rows, types, compact }) {
   const orderedT3 = t3Order.map(i => T3_COLS[i]).filter(c => !t3Hidden.has(c.key));
 
   const t3SortVal = (r, key) => {
-    if (key === "date")  { const [d,m,y] = r.date.split("/"); return +new Date(+y, +m-1, +d); }
+    if (key === "date")  return dateKey(r.date);
     if (key === "type")  return types[r.type] || "";
     if (key === "ref")   return r.ref || "";
     if (key === "dc")    return r.dc;

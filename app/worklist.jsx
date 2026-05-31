@@ -9,6 +9,7 @@ import React, { useState, useMemo } from 'react';
 import { Icon } from './icons.jsx';
 import { Chip } from './ui.jsx';
 import { WORKLIST, STATUS, TASK_TYPES, CLERKS, CURRENT_CLERK, fmt } from './data.jsx';
+import { parseDMY, TODAY } from './dates.js';
 
 // ── helpers ────────────────────────────────────────────────────────────────
 const PRIO = {
@@ -62,7 +63,7 @@ function TaskBoard({ tasks, onToggle, onRunFlow, onOpenCase, onOpenTasks }) {
       if (view === "team") { /* all */ }
       if (view === "cases") return false; // handled by CaseQueue
       if (period === "overdue" && !t.overdue) return false;
-      if (period === "today" && !t.overdue && t.due > "02/06/2026") return false;
+      if (period === "today" && !t.overdue && parseDMY(t.due) > TODAY) return false;
       if (period === "week" && t.done) return false;
       if (typeFilter !== "all" && t.type !== typeFilter) return false;
       if (t.done && period !== "all") return false;

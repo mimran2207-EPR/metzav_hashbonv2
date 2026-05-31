@@ -1,4 +1,5 @@
 // data.jsx — mock account-status data (demo only — all personal details are fictional)
+import { minusDays } from './dates.js';
 
 const PAYER = {
   name: "ישראל לדוגמה",
@@ -183,12 +184,7 @@ const CHARGE_META = {
   collect: { naxas: "5002205", sug: "הוצ' גבייה (מילגם)" },
   water:   { naxas: "13-88142", sug: "מים וביוב" },
 };
-function minusDays(dmy, n) {
-  const [d, m, y] = dmy.split("/").map(Number);
-  const dt = new Date(y, m - 1, d - n);
-  const p = x => String(x).padStart(2, "0");
-  return `${p(dt.getDate())}/${p(dt.getMonth() + 1)}/${dt.getFullYear()}`;
-}
+// minusDays imported from ./dates.js (single source of truth)
 const LEDGER = Object.entries(CHARGE_META).flatMap(([key, meta]) =>
   (TXNS[key] || []).map((r, i) => {
     const credit = r.dc === "ז";
