@@ -327,6 +327,16 @@ const WORKLIST = [
     last: "חוב סולק · 18/05", nba: { label: "סגור תיק", flow: null }, tags: ["שולם"] },
 ];
 
+// TASKS — the clerk's follow-up list (BPM tasks). Some are seeded; flows can
+// auto-create follow-ups (e.g. an arrangement creates a "track first payment" task).
+const TASKS = [
+  { id: 1, title: "ליצור קשר טלפוני — חוב ארנונה",      caseName: "ישראל לדוגמה", caseId: "999-DEMO",   due: "02/06/2026", overdue: true,  assignee: "שמעון עמר", priority: "high", done: false },
+  { id: 2, title: "אישור מנהל לעיקול חשבון בנק",        caseName: "כהן דוד",      caseId: "028841200", due: "01/06/2026", overdue: true,  assignee: "שמעון עמר", priority: "crit", done: false },
+  { id: 3, title: "לאסוף מסמכי ועדת הנחות",             caseName: "לוי שרה",      caseId: "301992847", due: "03/06/2026", overdue: false, assignee: "רונית כהן", priority: "med",  done: false },
+  { id: 4, title: "מעקב תשלום ראשון בהסדר",             caseName: "מזרחי רחל",     caseId: "118402665", due: "05/07/2026", overdue: false, assignee: "רונית כהן", priority: "med",  done: false },
+  { id: 5, title: "סגירת תיק — חוב סולק",               caseName: "ביטון נעמה",    caseId: "550113907", due: "20/05/2026", overdue: false, assignee: "רונית כהן", priority: "low",  done: true },
+];
+
 // CASE_TIMELINE — seed history for the open case (live flow events prepend to this).
 const CASE_TIMELINE = [
   { id: 1, type: "letter",  icon: "send",   tone: "warn", time: "21/05/2026 09:40", title: "מכתב התראה ראשון נשלח", detail: "דואר רשום · אסמכתא RR-44120 · רונית כהן" },
@@ -338,5 +348,5 @@ const CASE_TIMELINE = [
 export {
   PAYER, ENTITIES, SUBJECTS, SUBJECT_DETAILS, SERVICES, TOTALS, TXNS, TXN_TYPES, YEARS, YEAR_BALANCES,
   AI_INSIGHTS, AI_ACTIONS, QUICK_ACTIONS, NOTES, DOCUMENTS, LEDGER, LEDGER_COLUMNS, fmt,
-  WORKLIST, STATUS, CASE_TIMELINE,
+  WORKLIST, STATUS, CASE_TIMELINE, TASKS,
 };

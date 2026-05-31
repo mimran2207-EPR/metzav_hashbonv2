@@ -5,13 +5,13 @@ import { HeroZone, ActionBar } from './hero.jsx';
 import { SubjectStrip, AllEntitiesView } from './content.jsx';
 import { Worklist, CaseTimeline } from './worklist.jsx';
 import { FloatingCopilot, CommandBar } from './panels.jsx';
-import { CopilotPanel, NotesDrawer, DocsDrawer, InterestCalc } from './panels2.jsx';
+import { CopilotPanel, NotesDrawer, DocsDrawer, InterestCalc, TasksDrawer } from './panels2.jsx';
 import { WideTxnScreen } from './wide-txns.jsx';
 import { FlowHost } from './flows.jsx';
 import { useTweaks, TweaksPanel, TweakSection, TweakRadio, TweakColor, TweakToggle } from './tweaks-panel.jsx';
 import { SectionHead, Card, Segmented, ToastHost, useMediaQuery } from './ui.jsx';
 import { Icon } from './icons.jsx';
-import { PAYER, TOTALS, SERVICES, TXNS, TXN_TYPES, SUBJECTS, DOCUMENTS, AI_INSIGHTS, QUICK_ACTIONS, NOTES, WORKLIST, STATUS, CASE_TIMELINE } from './data.jsx';
+import { PAYER, TOTALS, SERVICES, TXNS, TXN_TYPES, SUBJECTS, DOCUMENTS, AI_INSIGHTS, QUICK_ACTIONS, NOTES, WORKLIST, STATUS, CASE_TIMELINE, TASKS } from './data.jsx';
 import { ThemePicker, THEMES, generateThemeFromColor } from './table-utils.jsx';
 import { usePersistedState, loadPref, savePref } from './storage.js';
 
@@ -49,6 +49,11 @@ function App() {
   const [caseEvents, setCaseEvents] = useState([]); // live case timeline events
   const [view, setView] = useState("worklist");    // "worklist" (queue) | "case"
   const [activeCase, setActiveCase] = useState(WORKLIST[0]);
+  const [tasks, setTasks] = useState(TASKS);
+  const [tasksOpen, setTasksOpen] = useState(false);
+  const openTaskCount = tasks.filter(t => !t.done).length;
+  const toggleTask = (id) => setTasks(ts => ts.map(t => t.id === id ? { ...t, done: !t.done } : t));
+  const addTask = (title, due) => setTasks(ts => [{ id: Date.now(), title, due: due || "", overdue: false, assignee: "שמעון עמר", priority: "med", caseName: activeCase.name, caseId: activeCase.id, done: false }, ...ts]);
 
   // Apply color theme dynamically (preset themes); custom handled below
   useEffect(() => {
@@ -103,6 +108,9 @@ function App() {
     setCaseEvents(prev => [{ ...ev, id: now.getTime(), time: stamp }, ...prev]);
     addNote(`${ev.title} — ${ev.detail}`);
     window.muToast(ev.title, ev.icon, ev.tone === "crit" ? "error" : ev.tone === "warn" ? "warn" : "success");
+    // flows that need follow-up auto-create a task
+    const followUp = { arrangement: "מעקב תשלום ראשון בהסדר", letter: "מעקב תגובת המשלם למכתב", enforce: "מעקב הליך אכיפה" }[ev.type];
+    if (followUp) setTasks(ts => [{ id: now.getTime() + 1, title: followUp, due: "", overdue: false, assignee: "שמעון עמר", priority: "med", caseName: activeCase.name, caseId: activeCase.id, done: false }, ...ts]);
   };
 
   const handlers = {
@@ -159,7 +167,7 @@ function App() {
 
       {view === "worklist" ? (
         <main id="main" style={{ flex: 1 }}>
-          <Worklist onOpenCase={openCase} onRunNba={runNba}/>
+          <Worklist onOpenCase={openCase} onRunNba={runNba} onOpenTasks={() => setTasksOpen(true)} taskCount={openTaskCount}/>
           <FloatingCopilot onOpen={() => setCopilot(true)} insights={AI_INSIGHTS}/>
         </main>
       ) : (
@@ -211,6 +219,12 @@ function App() {
 
       <div style={{ maxWidth: 1360, margin: "0 auto", width: "100%", padding: "16px 24px 0", boxSizing: "border-box", display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ flex: 1 }}><ActionBar notesCount={notes.length} year={year} onYear={setYear} handlers={handlers}/></div>
+        <button data-focusring onClick={() => setTasksOpen(true)} title="משימות"
+          style={{ display: "inline-flex", alignItems: "center", gap: 7, border: "1px solid var(--ink-200)", background: "var(--white)",
+            borderRadius: 999, padding: "6px 13px", cursor: "pointer", fontFamily: "var(--font)", fontSize: 13, fontWeight: 600, color: "var(--ink-700)" }}>
+          <Icon name="notes" size={15} color="var(--teal-600)"/> משימות
+          {openTaskCount > 0 && <span className="num" style={{ background: "var(--amber)", color: "#fff", fontSize: 11, fontWeight: 700, borderRadius: 999, padding: "1px 7px" }}>{openTaskCount}</span>}
+        </button>
         <ThemePicker activeId={themeId} onChange={setThemeId} onCustom={handleCustomTheme}/>
       </div>
 
@@ -272,6 +286,7 @@ function App() {
       <CopilotPanel open={copilot} onClose={() => setCopilot(false)} onRunFlow={(id) => openFlow(id)}/>
       <NotesDrawer open={notesOpen} onClose={() => setNotesOpen(false)} notes={notes} onAdd={addNote}/>
       <DocsDrawer open={docsOpen} onClose={() => setDocsOpen(false)} docs={DOCUMENTS}/>
+      <TasksDrawer open={tasksOpen} onClose={() => setTasksOpen(false)} tasks={tasks} onToggle={toggleTask} onAdd={addTask}/>
       <InterestCalc open={calcOpen} onClose={() => setCalcOpen(false)} baseNominal={TOTALS.nominal}/>
       <WideTxnScreen open={wideOpen} onClose={() => { setWideOpen(false); setWideNaxas(null); }} payer={PAYER} filterNaxas={wideNaxas}/>
       <FlowHost flow={flow} onClose={() => setFlow(null)} onComplete={completeFlow}/>

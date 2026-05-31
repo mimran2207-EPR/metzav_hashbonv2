@@ -243,4 +243,62 @@ function InterestCalc({ open, onClose, baseNominal }) {
   );
 }
 
-export { CopilotPanel, NotesDrawer, DocsDrawer, InterestCalc };
+// TasksDrawer — the clerk's follow-up task list (BPM). Toggle done, filter
+// open/all, and add a new task. Tasks can also be auto-created by flows.
+const TASK_PRIO = { crit: "var(--red)", high: "var(--amber)", med: "var(--teal-500)", low: "var(--ink-400)" };
+function TasksDrawer({ open, onClose, tasks, onToggle, onAdd }) {
+  const [filter, setFilter] = useState("open");
+  const [title, setTitle] = useState("");
+  const [due, setDue] = useState("");
+  const shown = tasks.filter(t => filter === "all" ? true : !t.done);
+  const openCount = tasks.filter(t => !t.done).length;
+  return (
+    <Sheet open={open} onClose={onClose} side="end" width={440} title={`משימות (${openCount} פתוחות)`} sub="מעקב ומשימות המשך"
+      footer={
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <input value={title} onChange={e => setTitle(e.target.value)} placeholder="משימה חדשה…"
+            style={{ width: "100%", boxSizing: "border-box", border: "1px solid var(--ink-200)", borderRadius: 11, padding: "10px 12px",
+              fontFamily: "var(--font)", fontSize: 13.5, color: "var(--ink-800)", outline: "none" }}/>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input value={due} onChange={e => setDue(e.target.value)} placeholder="תאריך יעד (אופ׳)"
+              style={{ flex: 1, boxSizing: "border-box", border: "1px solid var(--ink-200)", borderRadius: 11, padding: "10px 12px",
+                fontFamily: "var(--font)", fontSize: 13, color: "var(--ink-800)", outline: "none" }}/>
+            <PillButton variant="primary" icon="plus" onClick={() => { if (title.trim()) { onAdd(title, due); setTitle(""); setDue(""); window.muToast("המשימה נוספה", "check", "success"); } }}>הוסף</PillButton>
+          </div>
+        </div>
+      }>
+      <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+        {[["open", "פתוחות"], ["all", "הכל"]].map(([k, l]) => (
+          <button key={k} data-focusring onClick={() => setFilter(k)}
+            style={{ border: "none", cursor: "pointer", borderRadius: 999, padding: "5px 13px", fontFamily: "var(--font)",
+              fontSize: 12.5, fontWeight: 600, background: filter === k ? "var(--teal-500)" : "var(--ink-50)", color: filter === k ? "#fff" : "var(--ink-600)" }}>{l}</button>
+        ))}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+        {shown.length === 0 && <div style={{ textAlign: "center", color: "var(--ink-400)", padding: "28px", fontSize: 13.5 }}>אין משימות פתוחות 🎉</div>}
+        {shown.map(t => (
+          <div key={t.id} style={{ display: "flex", alignItems: "flex-start", gap: 11, border: "1px solid var(--ink-200)",
+            borderInlineStart: `4px solid ${TASK_PRIO[t.priority] || "var(--ink-300)"}`, borderRadius: 12, padding: "11px 13px",
+            background: t.done ? "var(--ink-50)" : "#fff", opacity: t.done ? 0.7 : 1 }}>
+            <button data-focusring onClick={() => onToggle(t.id)} aria-pressed={t.done} aria-label="סמן בוצע"
+              style={{ width: 22, height: 22, flex: "none", marginTop: 1, borderRadius: 7, cursor: "pointer",
+                border: `1.5px solid ${t.done ? "var(--ok-fg)" : "var(--ink-300)"}`, background: t.done ? "var(--ok-fg)" : "#fff",
+                display: "grid", placeItems: "center" }}>
+              {t.done && <Icon name="check" size={13} color="#fff"/>}
+            </button>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--ink-800)", textDecoration: t.done ? "line-through" : "none" }}>{t.title}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3, fontSize: 11.5, color: "var(--ink-muted)", flexWrap: "wrap" }}>
+                {t.caseName && <span>{t.caseName}</span>}
+                {t.due && <><span style={{ color: "var(--ink-300)" }}>·</span><span className="num" style={{ color: t.overdue && !t.done ? "var(--err-fg)" : "var(--ink-muted)", fontWeight: t.overdue && !t.done ? 700 : 500 }}>{t.due}</span></>}
+                {t.assignee && <><span style={{ color: "var(--ink-300)" }}>·</span><span>{t.assignee}</span></>}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Sheet>
+  );
+}
+
+export { CopilotPanel, NotesDrawer, DocsDrawer, InterestCalc, TasksDrawer };

@@ -36,7 +36,7 @@ const SORTS = [
 ];
 const PRIO_RANK = { crit: 0, high: 1, med: 2, low: 3 };
 
-function Worklist({ onOpenCase, onRunNba }) {
+function Worklist({ onOpenCase, onRunNba, onOpenTasks, taskCount = 0 }) {
   const [statusFilter, setStatusFilter] = useState("all");
   const [onlyOverdue, setOnlyOverdue] = useState(false);
   const [q, setQ] = useState("");
@@ -120,6 +120,14 @@ function Worklist({ onOpenCase, onRunNba }) {
             fontFamily: "var(--font)", fontSize: 13, color: "var(--ink-700)", cursor: "pointer" }}>
           {SORTS.map(s => <option key={s.id} value={s.id}>מיון: {s.label}</option>)}
         </select>
+        {onOpenTasks && (
+          <button data-focusring onClick={onOpenTasks} title="משימות"
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid var(--ink-200)", background: "#fff",
+              borderRadius: 9, padding: "7px 12px", cursor: "pointer", fontFamily: "var(--font)", fontSize: 13, fontWeight: 600, color: "var(--ink-700)" }}>
+            <Icon name="notes" size={14} color="var(--teal-600)"/> משימות
+            {taskCount > 0 && <span className="num" style={{ background: "var(--amber)", color: "#fff", fontSize: 11, fontWeight: 700, borderRadius: 999, padding: "1px 7px" }}>{taskCount}</span>}
+          </button>
+        )}
       </div>
 
       {/* case list */}
