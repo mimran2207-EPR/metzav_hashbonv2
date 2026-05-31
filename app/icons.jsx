@@ -57,7 +57,9 @@ const ICON_PATHS = {
   engineering: <><path d="M12 4.2v3.2"/><path d="m8.5 19.5 3.5-9.4 3.5 9.4"/><path d="M8.5 19.5h7"/><circle cx="12" cy="6" r="1.4"/></>,
 };
 
-function Icon({ name, size = 20, color = "currentColor", stroke = 1.8, style }) {
+// Memoized: Icon renders hundreds of times per screen with stable props;
+// React.memo skips re-render when name/size/color/stroke are unchanged.
+const Icon = React.memo(function Icon({ name, size = 20, color = "currentColor", stroke = 1.8, style }) {
   const d = ICON_PATHS[name];
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color}
@@ -66,6 +68,6 @@ function Icon({ name, size = 20, color = "currentColor", stroke = 1.8, style }) 
       {d || null}
     </svg>
   );
-}
+});
 
 export { Icon, ICON_PATHS };

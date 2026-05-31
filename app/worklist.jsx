@@ -307,7 +307,8 @@ function CaseQueue({ onOpenCase, onRunNba }) {
           const st = STATUS[c.status];
           return (
             <div key={c.id} onClick={() => onOpenCase(c)} data-focusring tabIndex={0}
-              onKeyDown={e => { if (e.key === "Enter") onOpenCase(c); }}
+              role="button"
+              onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpenCase(c); } }}
               className="mu-rise" style={{ animationDelay: `${i*28}ms`, display: "flex", alignItems: "center", gap: 12,
                 background: "var(--white)", cursor: "pointer", border: "1px solid var(--ink-100)",
                 borderInlineStart: `4px solid ${prio.color}`, borderRadius: 12, padding: "11px 14px",
