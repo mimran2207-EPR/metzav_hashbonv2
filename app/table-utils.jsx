@@ -240,9 +240,12 @@ export function generateThemeFromColor(hex) {
 }
 
 // ThemePicker — floating color palette + custom color picker (like Office)
+// Uses position:fixed for the panel so it can never be clipped by parent overflow.
 export function ThemePicker({ activeId, onChange, onCustom }) {
   const [open, setOpen] = useState(false);
   const [customHex, setCustomHex] = useState("#2AA7B8");
+  const [panelPos, setPanelPos] = useState({ top: 0, left: 0 });
+  const btnRef = useRef(null);
   const active = activeId === "custom" ? { id:"custom", name:"מותאם", dot: customHex } : (THEMES.find(t => t.id === activeId) || THEMES[0]);
 
   const handleCustomChange = (hex) => {
@@ -250,9 +253,20 @@ export function ThemePicker({ activeId, onChange, onCustom }) {
     onCustom && onCustom(hex);
   };
 
+  const openPanel = () => {
+    if (btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      const PANEL_W = 176;
+      // place below the button, aligned to whichever edge keeps panel in viewport
+      const left = Math.min(r.right - PANEL_W, window.innerWidth - PANEL_W - 8);
+      setPanelPos({ top: r.bottom + 5, left: Math.max(8, left) });
+    }
+    setOpen(o => !o);
+  };
+
   return (
-    <div style={{ position: "relative" }}>
-      <button data-focusring onClick={() => setOpen(o => !o)} title="ערכת צבעים"
+    <div>
+      <button ref={btnRef} data-focusring onClick={openPanel} title="ערכת צבעים"
         style={{ display: "flex", alignItems: "center", gap: 6, border: "1px solid var(--ink-200)",
           background: "var(--white)", borderRadius: 999, padding: "5px 10px 5px 7px",
           cursor: "pointer", fontFamily: "var(--font)", fontSize: 12.5, fontWeight: 600, color: "var(--ink-700)" }}>
@@ -265,9 +279,10 @@ export function ThemePicker({ activeId, onChange, onCustom }) {
       {open && (
         <>
           <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 9000 }}/>
-          <div className="mu-rise" style={{ position: "absolute", insetInlineEnd: 0, top: "calc(100% + 5px)", zIndex: 9001,
+          <div className="mu-rise" style={{
+            position: "fixed", top: panelPos.top, left: panelPos.left, zIndex: 9001,
             background: "#fff", border: "1px solid var(--ink-200)", borderRadius: 12, boxShadow: "var(--shadow-lg)",
-            padding: "8px 8px 10px", display: "flex", flexDirection: "column", gap: 2, minWidth: 170 }}>
+            padding: "8px 8px 10px", display: "flex", flexDirection: "column", gap: 2, width: 176 }}>
 
             {/* Preset themes — compact dots grid */}
             <div style={{ fontSize: 10.5, fontWeight: 700, color: "var(--ink-muted)", padding: "0 4px 4px" }}>ערכת צבעים</div>
