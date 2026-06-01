@@ -244,39 +244,39 @@ const TXNS = {
 // A flat, payer-level ledger built from TXNS, enriched with the full column set
 // from the legacy MASTER screen + field dictionary (חוברת1.xlsx):
 // נכס · סוג חיוב · ת.ערך · ת.פעולה · ת.גביה · פרטים · ז/ח · זכות · חובה · ית.מצטברת · מ.גב · בוצע ע"י · מס' פקודה.
-const CHARGE_META = {
-  arnona:  { naxas: "5002205", sug: "ארנונה" },
-  shmira:  { naxas: "5002205", sug: "אגרת שמירה" },
-  sewage:  { naxas: "5002205", sug: "אגרת ביוב" },
-  collect: { naxas: "5002205", sug: "הוצ' גבייה (מילגם)" },
-  water:   { naxas: "13-88142", sug: "מים וביוב" },
-};
 // minusDays imported from ./dates.js (single source of truth)
-const LEDGER = Object.entries(CHARGE_META).flatMap(([key, meta]) =>
-  (TXNS[key] || []).map((r, i) => {
-    const credit = r.dc === "ז";
-    const amount = r.nominal || r.addon || 0;
-    const system = r.type === 31 || r.type === 8;
-    return {
-      id: `${key}-${i}`,
-      naxas: meta.naxas,
-      sug: meta.sug,
-      sugKey: key,
-      terech: r.date,                                  // ת. ערך
-      tpeula: minusDays(r.date, r.type === 8 ? 0 : 1), // ת. פעולה
-      tgviya: credit ? r.date : "—",                   // ת. גבייה (לזכות בלבד)
-      peratim: r.ref && r.ref !== "—" ? r.ref : TXN_TYPES[r.type],
-      type: r.type,
-      dc: r.dc,
-      zchut: credit ? amount : null,
-      chova: credit ? null : amount,
-      itra: r.bal,                                     // ית. מצטברת (לכל סוג חיוב)
-      magav: credit ? "55" : "23",                     // קוד מ.גב
-      user: system ? "מערכת" : credit ? "hsv_hug" : "שמעון עמר",
-      pkuda: credit ? `69${9000 + i * 13}` : r.type === 44 ? "44120" : "—",
-      fyr: Number(r.date.split("/")[2]),
-    };
-  })
+// Built from every property's charges (inline rows OR a TXNS key) so the wide ledger
+// covers all נכסים, not just the few that had hand-authored transaction sets.
+const LEDGER = Object.values(SUBJECT_DETAILS).flatMap(subj =>
+  subj.subItems.flatMap(si =>
+    (si.charges || []).flatMap(ch => {
+      const txnRows = ch.rows || TXNS[ch.txns] || [];
+      return txnRows.map((r, i) => {
+        const credit = r.dc === "ז";
+        const amount = r.nominal || r.addon || 0;
+        const system = r.type === 31 || r.type === 8;
+        return {
+          id: `${si.id}-${ch.id}-${i}`,
+          naxas: si.id,
+          sug: ch.name,
+          sugKey: ch.id,
+          terech: r.date,                                  // ת. ערך
+          tpeula: minusDays(r.date, r.type === 8 ? 0 : 1), // ת. פעולה
+          tgviya: credit ? r.date : "—",                   // ת. גבייה (לזכות בלבד)
+          peratim: r.ref && r.ref !== "—" ? r.ref : TXN_TYPES[r.type],
+          type: r.type,
+          dc: r.dc,
+          zchut: credit ? amount : null,
+          chova: credit ? null : amount,
+          itra: r.bal,                                     // ית. מצטברת (לכל סוג חיוב)
+          magav: credit ? "55" : "23",                     // קוד מ.גב
+          user: system ? "מערכת" : credit ? "hsv_hug" : "שמעון עמר",
+          pkuda: credit ? `69${9000 + i * 13}` : r.type === 44 ? "44120" : "—",
+          fyr: Number(r.date.split("/")[2]),
+        };
+      });
+    })
+  )
 );
 const LEDGER_COLUMNS = [
   { key: "naxas",   label: "נכס",         align: "start", w: 96,  num: true },
