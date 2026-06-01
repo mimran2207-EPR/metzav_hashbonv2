@@ -35,8 +35,8 @@ const SERVICES = [
 // `id` matches SERVICES.subject so selecting a subject filters the balances table.
 function subjectBalance(id) { return SERVICES.filter(s => s.subject === id).reduce((a, s) => a + s.balance, 0); }
 const SUBJECTS = [
-  { id: "arnona",      code:  3, name: "ארנונה",   icon: "building",    count: 3, unit: "נכסים",   get balance(){ return subjectBalance("arnona"); } },
-  { id: "water",       code: 13, name: "מים וביוב", icon: "droplet",     count: 2, unit: "מדי מים", get balance(){ return subjectBalance("water"); } },
+  { id: "arnona",      code:  3, name: "ארנונה",   icon: "building",    count: 5, unit: "נכסים",   get balance(){ return subjectBalance("arnona"); } },
+  { id: "water",       code: 13, name: "מים וביוב", icon: "droplet",     count: 3, unit: "מדי מים", get balance(){ return subjectBalance("water"); } },
   { id: "education",   code:  4, name: "חינוך",     icon: "education",   count: 2, unit: "ילדים",   balance: 0 },
   { id: "parking",     code:  5, name: "חניה",      icon: "parking",     count: 5, unit: "דוחות",   balance: 740 },
   { id: "signage",     code: 15, name: "שילוט",     icon: "signage",     count: 1, unit: "שלט",     balance: 0 },
@@ -90,6 +90,30 @@ const SUBJECT_DETAILS = {
       charges: [
         { id: "arnona_c", code: 1, name: "ארנונה", balance: 0, srcYear: 2026, discount: null, arrangement: null, tracking: false },
       ] },
+    { id: "5002210", name: "דירה להשכרה", meta: "רחוב הדוגמה 1, דירה 3",
+      propertyTypes: [
+        { code: "100", desc: "בית מגורים",    area: 64,  unit: 'מ"ר' },
+      ],
+      holders: [
+        { name: "ישראל לדוגמה", payerNo: "999-DEMO", balance: 6420, from: "06/2021", to: null, current: true, reason: "רכישה להשקעה" },
+        { name: "מזרחי אבי", payerNo: "031557720", balance: 1180, from: "01/2019", to: "06/2021", reason: "סיום שכירות" },
+        { name: "לוי שרה", payerNo: "024889310", balance: 0, from: "07/2015", to: "01/2019", reason: "סיום שכירות" },
+      ],
+      charges: [
+        { id: "arn_210", code: 1, name: "ארנונה",      srcYear: 2026, discount: null, arrangement: 30, arrangementDesc: "פריסה 6 תשלומים", tracking: false, rows: synthRows(5180) },
+        { id: "shm_210", code: 2, name: "אגרת שמירה", srcYear: 2026, discount: null, arrangement: null, tracking: false, rows: synthRows(1240) },
+      ] },
+    { id: "5002211", name: "חנות מסחרית", meta: "רחוב המסחר 8",
+      propertyTypes: [
+        { code: "200", desc: "מבנה מסחרי",   area: 48,  unit: 'מ"ר' },
+      ],
+      holders: [
+        { name: "ישראל לדוגמה", payerNo: "999-DEMO", balance: 0, from: "09/2017", to: null, current: true, reason: "רכישה" },
+        { name: "ביכורי השדה בע״מ", payerNo: "514778820", balance: 3260, from: "01/2012", to: "09/2017", reason: "מכירת עסק" },
+      ],
+      charges: [
+        { id: "arn_211", code: 1, name: "ארנונה עסקית", balance: 0, srcYear: 2026, discount: null, arrangement: null, tracking: false },
+      ] },
   ] },
   water: { subItems: [
     { id: "13-88142", name: 'מד מים 2"', meta: "צריכה רבעונית",
@@ -113,6 +137,49 @@ const SUBJECT_DETAILS = {
       charges: [
         { id: "water_b", code: 4, name: "מים — גינון", balance: 0, srcYear: 2026, discount: null, arrangement: null, tracking: false },
       ] },
+    { id: "13-88150", name: "מד מים מסחרי", meta: "חנות — צריכה חודשית",
+      propertyTypes: [
+        { code: "W03", desc: 'מד מים 1.5"',   area: null, unit: "יח'" },
+      ],
+      holders: [
+        { name: "ישראל לדוגמה", payerNo: "999-DEMO", balance: 540, from: "09/2017", to: null, current: true, reason: "התקנה" },
+      ],
+      charges: [
+        { id: "water_c", code: 4, name: "מים וביוב — מסחרי", srcYear: 2026, discount: null, arrangement: null, tracking: false, rows: synthRows(540) },
+      ] },
+  ] },
+  education: { subItems: [
+    { id: "edu-1", name: "ילד/ה 1 — גן עירוני", meta: 'גן חובה · שנה"ל תשפ"ו', holders: [],
+      propertyTypes: [{ code: "E10", desc: "גן ילדים", area: null, unit: "—" }],
+      charges: [
+        { id: "gan-1",  code: 41, name: "אגרת גן", balance: 0, srcYear: 2026, discount: null, arrangement: null, tracking: false },
+        { id: "tzah-1", code: 42, name: "צהרון",   balance: 0, srcYear: 2026, discount: null, arrangement: null, tracking: false },
+      ] },
+    { id: "edu-2", name: "ילד/ה 2 — בית ספר יסודי", meta: "כיתה ג' · הסעות", holders: [],
+      propertyTypes: [{ code: "E20", desc: "בית ספר יסודי", area: null, unit: "—" }],
+      charges: [
+        { id: "hasaa-2", code: 43, name: "אגרת הסעות", balance: 0, srcYear: 2026, discount: null, arrangement: null, tracking: false },
+      ] },
+  ] },
+  parking: { subItems: [
+    { id: "park-1", name: "דוח חניה 1", meta: "רחוב הדוגמה · 12/03/2026", holders: [],
+      charges: [{ id: "p1", code: 51, name: "קנס חניה", srcYear: 2026, discount: null, arrangement: null, tracking: false, rows: synthRows(250) }] },
+    { id: "park-2", name: "דוח חניה 2", meta: "כיכר העיר · 02/02/2026", holders: [],
+      charges: [{ id: "p2", code: 51, name: "קנס חניה", srcYear: 2026, discount: null, arrangement: null, tracking: true, rows: synthRows(250) }] },
+    { id: "park-3", name: "דוח חניה 3", meta: "רחוב המסחר · 18/01/2026", holders: [],
+      charges: [{ id: "p3", code: 51, name: "קנס חניה", srcYear: 2026, discount: 50, discountDesc: "ערעור התקבל חלקית", arrangement: null, tracking: false, rows: synthRows(240) }] },
+    { id: "park-4", name: "דוח חניה 4", meta: "שולם · 10/2025", holders: [],
+      charges: [{ id: "p4", code: 51, name: "קנס חניה", balance: 0, srcYear: 2025, discount: null, arrangement: null, tracking: false }] },
+    { id: "park-5", name: "דוח חניה 5", meta: "שולם · 08/2025", holders: [],
+      charges: [{ id: "p5", code: 51, name: "קנס חניה", balance: 0, srcYear: 2025, discount: null, arrangement: null, tracking: false }] },
+  ] },
+  clubs: { subItems: [
+    { id: "club-1", name: "חוג שחייה", meta: "מרכז ספורט · רבעון 1", holders: [],
+      charges: [{ id: "c1", code: 61, name: "דמי חוג", srcYear: 2026, discount: null, arrangement: null, tracking: false, rows: synthRows(180) }] },
+    { id: "club-2", name: "חוג אמנות", meta: 'מתנ"ס · רבעון 1', holders: [],
+      charges: [{ id: "c2", code: 61, name: "דמי חוג", balance: 0, srcYear: 2026, discount: null, arrangement: null, tracking: false }] },
+    { id: "club-3", name: "חוג כדורגל", meta: "שולם · 2025", holders: [],
+      charges: [{ id: "c3", code: 61, name: "דמי חוג", balance: 0, srcYear: 2025, discount: null, arrangement: null, tracking: false }] },
   ] },
 };
 
