@@ -1,0 +1,17 @@
+{
+  "//": "Editor/tsc project config only — Vite ignores this and builds via esbuild. Enables JSDoc-based type hints from app/types.js. checkJs is off so existing JS isn't flooded with errors; opt a file in with a `// @ts-check` comment when it's been typed.",
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "allowJs": true,
+    "checkJs": false,
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "baseUrl": "."
+  },
+  "include": ["app", "src"],
+  "exclude": ["node_modules", "dist"]
+}

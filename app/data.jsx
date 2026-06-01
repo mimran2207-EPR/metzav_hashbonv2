@@ -459,6 +459,12 @@ const CASE_TIMELINE = [
 ];
 
 // synthRows — deterministic transaction list for a charge of a given balance.
+/**
+ * Synthesize a charge's transactions for a given balance and year (opening + annual + payment).
+ * @param {number} balance  closing balance the rows should sum to
+ * @param {number} [year]   fiscal year for the row dates
+ * @returns {import('./types.js').TxnRow[]}
+ */
 function synthRows(balance, year = 2026) {
   if (balance <= 0) return [{ date: `01/01/${year}`, type: 8, ref: "—", dc: "ח", nominal: 0, addon: 0, bal: 0 }];
   const open = Math.round(balance * 0.55), annual = Math.round(balance * 1.55), paid = annual - balance;
@@ -471,6 +477,11 @@ function synthRows(balance, year = 2026) {
 
 // paidRows — a fully-settled charge: yearly charge debited then paid in full, ending at 0.
 // Gives closed/settled years real (balanced) transaction history instead of an empty row.
+/**
+ * @param {number} charge  the yearly charge amount (debited then paid)
+ * @param {number} year    fiscal year for the row dates
+ * @returns {import('./types.js').TxnRow[]}
+ */
 function paidRows(charge, year) {
   if (charge <= 0) return synthRows(0, year);
   return [
@@ -484,6 +495,10 @@ function paidRows(charge, year) {
 // so the drill view always reflects the open case (no more "demo data" mismatch).
 // buildYearData — the demo payer's account for a single past (closed) year, synthesized from
 // that year's closing balance: same subject, with that year's charges and transactions.
+/**
+ * @param {number} year
+ * @returns {import('./types.js').CaseData}
+ */
 function buildYearData(year) {
   const B = YEAR_BALANCES[year] || 0;
   const settled = B === 0;            // a closed year with no debt still has paid history
@@ -505,6 +520,14 @@ function buildYearData(year) {
   };
 }
 
+/**
+ * Build the drill-down data for an open case. The demo payer returns the authored data
+ * (year-aware); a holder opened from a real property returns that exact property; every
+ * other case is synthesized from its balance.
+ * @param {import('./types.js').Case|null|undefined} c
+ * @param {number} [year]
+ * @returns {import('./types.js').CaseData}
+ */
 function buildCaseData(c, year) {
   if (!c || c.id === PAYER.payerNo) {
     // demo payer is year-aware: the open year shows the authored data; closed years are synthesized

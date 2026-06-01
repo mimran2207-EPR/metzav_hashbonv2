@@ -71,11 +71,21 @@ function SubjectStrip({ subjects, selected, onSelect }) {
 
 // ── Drill-down: subject → sub-items → charges → account status ──────────────
 const UNIT_SINGULAR = { "נכסים": "נכס", "מדי מים": "מד מים", "ילדים": "ילד/ה", "דוחות": "דוח", "שלט": "שלט", "רישומים": "רישום", "תיק": "תיק", "היתר": "היתר" };
+/**
+ * Resolve a charge's transaction rows: inline `rows`, else a `txns` key into TXNS, else none.
+ * @param {import('./types.js').Charge} charge
+ * @returns {import('./types.js').TxnRow[]}
+ */
 function chargeRows(charge) {
   if (charge.rows) return charge.rows;
   if (charge.txns && TXNS[charge.txns]) return TXNS[charge.txns];
   return [];
 }
+/**
+ * A charge's outstanding balance — the last row's running balance, or the flat `balance`.
+ * @param {import('./types.js').Charge} charge
+ * @returns {number}
+ */
 function chargeBalance(charge) {
   const r = chargeRows(charge);
   if (r.length) return r[r.length - 1].bal;
@@ -309,6 +319,12 @@ function TxnTable({ rows, types, compact }) {
 
 // buildEntityRows — flatten all subjects into a list of entity objects (level 1 rows).
 // detailsMap defaults to the demo payer's SUBJECT_DETAILS; per-case data passes its own.
+/**
+ * @param {import('./types.js').Subject[]} subjects
+ * @param {import('./types.js').Subject|null} filterSubject
+ * @param {import('./types.js').SubjectDetailsMap} [detailsMap]
+ * @returns {import('./types.js').EntityRow[]}
+ */
 function buildEntityRows(subjects, filterSubject, detailsMap = SUBJECT_DETAILS) {
   const result = [];
   const list = filterSubject ? [filterSubject] : subjects;
