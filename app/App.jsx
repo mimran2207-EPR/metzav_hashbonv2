@@ -17,8 +17,8 @@ import { useTweaks, TweaksPanel, TweakSection, TweakRadio, TweakColor, TweakTogg
 import { SectionHead, Card, Segmented, ToastHost, useMediaQuery } from './ui.jsx';
 import { Icon } from './icons.jsx';
 import { PAYER, TOTALS, SERVICES, TXNS, TXN_TYPES, SUBJECTS, DOCUMENTS, AI_INSIGHTS, QUICK_ACTIONS, NOTES, WORKLIST, STATUS, CASE_TIMELINE, TASKS, TASK_TYPES, CURRENT_CLERK, buildCaseData, HOLDER_EXTRA, YEAR_BALANCES, CURRENT_YEAR, YEAR_INFO, YEAR_STATUS } from './data.jsx';
-import { THEMES, generateThemeFromColor } from './table-utils.jsx';
-import { usePersistedState, loadPref, savePref } from './storage.js';
+import { usePersistedState } from './storage.js';
+import { useTheme, useGlobalShortcuts } from './hooks.js';
 import { toast } from './toast.js';
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
@@ -50,7 +50,7 @@ function App() {
   const [calcOpen, setCalcOpen] = useState(false);
   const [wideOpen, setWideOpen] = useState(false);
   const [wideNaxas, setWideNaxas] = useState(null);
-  const [themeId, setThemeId] = usePersistedState("themeId", "teal");
+  const { themeId, setThemeId, handleCustomTheme } = useTheme();
   const [flow, setFlow] = useState(null);          // {id, ctx} active action flow
   const [caseEvents, setCaseEvents] = useState([]); // live case timeline events
   const [view, setView] = useState("case");         // "case" (account status) | "worklist" (tasks)
@@ -61,35 +61,7 @@ function App() {
   const toggleTask = (id) => setTasks(ts => ts.map(t => t.id === id ? { ...t, done: !t.done } : t));
   const addTask = (title, due) => setTasks(ts => [{ id: Date.now(), title, due: due || "", overdue: false, assignee: "שמעון עמר", priority: "med", caseName: activeCase.name, caseId: activeCase.id, done: false }, ...ts]);
 
-  // Apply color theme dynamically (preset themes); custom handled below
-  useEffect(() => {
-    if (themeId === "custom") {
-      const hex = loadPref("customHex", "#2AA7B8");
-      Object.entries(generateThemeFromColor(hex)).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
-      return;
-    }
-    const theme = THEMES.find(t => t.id === themeId) || THEMES[0];
-    Object.entries(theme.vars).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
-  }, [themeId]);
-
-  // Apply custom color theme from full color picker (and remember it)
-  const handleCustomTheme = (hex) => {
-    savePref("customHex", hex);
-    Object.entries(generateThemeFromColor(hex)).forEach(([k, v]) => document.documentElement.style.setProperty(k, v));
-  };
-
-  // ⌘K / Ctrl+K + shortcuts
-  // NOTE: we intentionally do NOT hijack Ctrl/⌘+P — overriding the browser's
-  // native print is hostile to users (and screen-reader / a11y workflows).
-  useEffect(() => {
-    const onKey = (e) => {
-      const k = e.key.toLowerCase();
-      if ((e.metaKey || e.ctrlKey) && k === "k") { e.preventDefault(); setCmdOpen(o => !o); }
-      else if ((e.metaKey || e.ctrlKey) && k === "j") { e.preventDefault(); setCopilot(o => !o); }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  useGlobalShortcuts(setCmdOpen, setCopilot);
 
   const isDemoCase = activeCase.id === PAYER.payerNo;
   const caseData = useMemo(() => buildCaseData(activeCase, year), [activeCase, year]);
