@@ -231,8 +231,10 @@ const YEARS = Array.from({ length: 2026 - 2007 + 1 }, (_, i) => 2026 - i);
 
 // YEAR_BALANCES — closing balance per fiscal year (multi-year view). Most years
 // are settled (0); a few carry open debt. Drives the year navigator + window.
+const CURRENT_YEAR = YEARS[0]; // the open (current) fiscal year — others are closed
+
 const YEAR_BALANCES = (() => {
-  const open = { 2026: 13574, 2025: 4120, 2023: 880 };
+  const open = { 2026: 13574, 2025: 4120, 2023: 880, 2022: 2650, 2020: 1490, 2018: 760 };
   const o = {};
   YEARS.forEach(y => { o[y] = open[y] || 0; });
   return o;
@@ -371,21 +373,44 @@ const CASE_TIMELINE = [
 ];
 
 // synthRows — deterministic transaction list for a charge of a given balance.
-function synthRows(balance) {
-  if (balance <= 0) return [{ date: "01/01/2026", type: 8, ref: "—", dc: "ח", nominal: 0, addon: 0, bal: 0 }];
+function synthRows(balance, year = 2026) {
+  if (balance <= 0) return [{ date: `01/01/${year}`, type: 8, ref: "—", dc: "ח", nominal: 0, addon: 0, bal: 0 }];
   const open = Math.round(balance * 0.55), annual = Math.round(balance * 1.55), paid = annual - balance;
   return [
-    { date: "01/01/2026", type: 8,  ref: "—",         dc: "ח", nominal: open,            addon: 0, bal: open },
-    { date: "01/01/2026", type: 1,  ref: "חיוב שנתי",  dc: "ח", nominal: annual - open,    addon: 0, bal: annual },
-    { date: "15/03/2026", type: 100, ref: "BANK",      dc: "ז", nominal: paid,             addon: 0, bal: balance },
+    { date: `01/01/${year}`, type: 8,  ref: "יתרת פתיחה", dc: "ח", nominal: open,         addon: 0, bal: open },
+    { date: `01/01/${year}`, type: 1,  ref: "חיוב שנתי",  dc: "ח", nominal: annual - open, addon: 0, bal: annual },
+    { date: `15/03/${year}`, type: 100, ref: "BANK",      dc: "ז", nominal: paid,          addon: 0, bal: balance },
   ];
 }
 
 // buildCaseData — per-case entities/charges/transactions. The demo payer returns
 // the rich global data; every other case gets its own set summing to its balance,
 // so the drill view always reflects the open case (no more "demo data" mismatch).
-function buildCaseData(c) {
-  if (!c || c.id === PAYER.payerNo) return { subjects: SUBJECTS, details: SUBJECT_DETAILS };
+// buildYearData — the demo payer's account for a single past (closed) year, synthesized from
+// that year's closing balance: same subject, with that year's charges and transactions.
+function buildYearData(year) {
+  const B = YEAR_BALANCES[year] || 0;
+  const arn = Math.round(B * 0.72);
+  const holders = [{ name: PAYER.name, payerNo: PAYER.payerNo, balance: B, from: "10/2019", to: null, current: true, reason: "רכישה" }];
+  const subItems = [{
+    id: `arn-${year}`, name: "דירת מגורים", meta: "רחוב הדוגמה 1, דירה 1",
+    propertyTypes: [{ code: "100", desc: "בית מגורים", area: 90, unit: 'מ"ר' }], holders,
+    charges: [
+      { id: `arn-${year}-a`, code: 1, name: "ארנונה",      srcYear: year, discount: null, arrangement: null, tracking: false, rows: synthRows(arn, year) },
+      { id: `arn-${year}-s`, code: 2, name: "אגרת שמירה", srcYear: year, discount: null, arrangement: null, tracking: false, rows: synthRows(B - arn, year) },
+    ],
+  }];
+  return {
+    subjects: [{ id: "arnona", code: 3, name: "ארנונה", icon: "building", count: subItems.length, unit: "נכסים", balance: B }],
+    details: { arnona: { subItems } },
+  };
+}
+
+function buildCaseData(c, year) {
+  if (!c || c.id === PAYER.payerNo) {
+    // demo payer is year-aware: the open year shows the authored data; closed years are synthesized
+    return (year != null && year !== CURRENT_YEAR) ? buildYearData(year) : { subjects: SUBJECTS, details: SUBJECT_DETAILS };
+  }
   // opened from a real property's holder chain → show that exact property (same id/name/data/chain),
   // so switching between its holders never fabricates a new property or a second current holder.
   if (c.realSubItem && c.realSubject) {
@@ -430,7 +455,7 @@ const HOLDER_EXTRA = {
 };
 
 export {
-  PAYER, ENTITIES, SUBJECTS, SUBJECT_DETAILS, SERVICES, TOTALS, TXNS, TXN_TYPES, YEARS, YEAR_BALANCES,
+  PAYER, ENTITIES, SUBJECTS, SUBJECT_DETAILS, SERVICES, TOTALS, TXNS, TXN_TYPES, YEARS, YEAR_BALANCES, CURRENT_YEAR,
   AI_INSIGHTS, AI_ACTIONS, QUICK_ACTIONS, NOTES, DOCUMENTS, LEDGER, LEDGER_COLUMNS, fmt,
   WORKLIST, STATUS, CASE_TIMELINE, TASKS, TASK_TYPES, CLERKS, CURRENT_CLERK, buildCaseData, HOLDER_EXTRA,
 };

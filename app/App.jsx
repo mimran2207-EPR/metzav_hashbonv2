@@ -16,7 +16,7 @@ const FlowHost      = lazy(() => import('./flows.jsx').then(m => ({ default: m.F
 import { useTweaks, TweaksPanel, TweakSection, TweakRadio, TweakColor, TweakToggle } from './tweaks-panel.jsx';
 import { SectionHead, Card, Segmented, ToastHost, useMediaQuery } from './ui.jsx';
 import { Icon } from './icons.jsx';
-import { PAYER, TOTALS, SERVICES, TXNS, TXN_TYPES, SUBJECTS, DOCUMENTS, AI_INSIGHTS, QUICK_ACTIONS, NOTES, WORKLIST, STATUS, CASE_TIMELINE, TASKS, TASK_TYPES, CURRENT_CLERK, buildCaseData, HOLDER_EXTRA } from './data.jsx';
+import { PAYER, TOTALS, SERVICES, TXNS, TXN_TYPES, SUBJECTS, DOCUMENTS, AI_INSIGHTS, QUICK_ACTIONS, NOTES, WORKLIST, STATUS, CASE_TIMELINE, TASKS, TASK_TYPES, CURRENT_CLERK, buildCaseData, HOLDER_EXTRA, YEAR_BALANCES, CURRENT_YEAR } from './data.jsx';
 import { THEMES, generateThemeFromColor } from './table-utils.jsx';
 import { usePersistedState, loadPref, savePref } from './storage.js';
 import { toast } from './toast.js';
@@ -92,13 +92,16 @@ function App() {
   }, []);
 
   const isDemoCase = activeCase.id === PAYER.payerNo;
-  const caseData = useMemo(() => buildCaseData(activeCase), [activeCase]);
+  const caseData = useMemo(() => buildCaseData(activeCase, year), [activeCase, year]);
   const caseSubjects = caseData.subjects;
   const activeSubject = caseSubjects.find(s => s.id === entity) || null;
   // case-aware payer identity + totals (demo case = full data; others = proportional split)
   const activePayer = isDemoCase ? PAYER : { ...PAYER, name: activeCase.name, payerNo: activeCase.id, status: STATUS[activeCase.status].label };
-  const totals = isDemoCase ? TOTALS : (() => {
-    const b = activeCase.balance, nominal = Math.round(b * 0.82), indexation = Math.round(b * 0.05);
+  // year-aware totals: the demo payer's open year shows the real figures; a closed year shows
+  // that year's closing balance. Other cases keep their single balance regardless of year.
+  const totals = (isDemoCase && year === CURRENT_YEAR) ? TOTALS : (() => {
+    const b = isDemoCase ? (YEAR_BALANCES[year] ?? 0) : activeCase.balance;
+    const nominal = Math.round(b * 0.82), indexation = Math.round(b * 0.05);
     return { nominal, indexation, interest: b - nominal - indexation, get balance() { return b; } };
   })();
   const openCase = (c) => { setActiveCase(c); setEntity("all"); setView("case"); window.scrollTo(0, 0); };

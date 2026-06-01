@@ -73,8 +73,8 @@ function BalanceCard({ totals, year, onPay }) {
         <span className="num" style={{ fontSize: "var(--text-hero)", fontWeight: 800, lineHeight: 1, color: "#fff" }}>
           ₪{fmt(totals.balance)}
         </span>
-        <span style={{ display: "inline-flex", alignItems: "center", background: "#fff", color: "var(--red)",
-          fontSize: 12, fontWeight: 700, padding: "3px 10px", borderRadius: 999, alignSelf: "center" }}>חובה</span>
+        <span style={{ display: "inline-flex", alignItems: "center", background: "#fff", color: totals.balance > 0 ? "var(--red)" : "var(--ok-fg)",
+          fontSize: 12, fontWeight: 700, padding: "3px 10px", borderRadius: 999, alignSelf: "center" }}>{totals.balance > 0 ? "חובה" : "שולם"}</span>
       </div>
       {/* breakdown parts — min 13px for Hebrew legibility, contrast-safe rgba(.9) */}
       <div style={{ display: "flex", gap: 0, marginTop: 18, marginBottom: 18, borderRadius: 14, overflow: "hidden",
