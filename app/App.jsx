@@ -196,30 +196,6 @@ function App() {
         </main>
       ) : (
       <>
-      {/* Next-Best-Action banner for the open case */}
-      {activeCase.nba && activeCase.nba.flow && (
-        <div style={{ maxWidth: 1360, margin: "10px auto 0", width: "100%", padding: "0 24px", boxSizing: "border-box" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 16px", borderRadius: 14,
-            background: "linear-gradient(135deg,rgba(var(--teal-rgb),.10),rgba(var(--teal-rgb),.03))",
-            border: "1px solid var(--teal-200)" }}>
-            <div style={{ width: 30, height: 30, borderRadius: 9, flex: "none", display: "grid", placeItems: "center",
-              background: "linear-gradient(135deg,var(--teal-400),var(--teal-600))", boxShadow: "0 3px 8px rgba(var(--teal-rgb),.32)" }}>
-              <Icon name="sparkle" size={17} color="#fff"/>
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--teal-600)", letterSpacing: ".02em" }}>פעולה מומלצת ע״י AI</span>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--ink-800)" }}>{activeCase.nba.label}</div>
-            </div>
-            <button data-focusring onClick={() => openFlow(activeCase.nba.flow, { balance: activeCase.balance, payerName: activePayer.name, subtitle: `${activePayer.name} · ${activePayer.payerNo}` })}
-              style={{ display: "inline-flex", alignItems: "center", gap: 6, flex: "none", border: "none", cursor: "pointer",
-                borderRadius: 999, padding: "9px 18px", fontFamily: "var(--font)", fontSize: 13.5, fontWeight: 700, color: "#fff",
-                background: "linear-gradient(135deg,var(--teal-500),var(--teal-700))", boxShadow: "0 4px 12px rgba(var(--teal-rgb),.32)" }}>
-              הפעל <Icon name="chevleft" size={15} color="#fff"/>
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* hero atmosphere wash */}
       <div style={{ background: "var(--wash-hero)", borderBottom: "1px solid var(--ink-100)",
         borderBottomLeftRadius: 24, borderBottomRightRadius: 24, marginTop: 10 }}>
