@@ -102,12 +102,15 @@ function App() {
     return { nominal, indexation, interest: b - nominal - indexation, get balance() { return b; } };
   })();
   const openCase = (c) => { setActiveCase(c); setEntity("all"); setView("case"); window.scrollTo(0, 0); };
-  // open a holder's card. The current holder maps to a real case (full account); a previous holder
-  // shows the SAME real property (same id/data/chain) under their name — never a fabricated property.
+  // open a holder's card. The demo payer keeps their full multi-subject account (home); every
+  // other holder opens the SAME real property — same id, data and holder chain — under their name,
+  // so the chain (and who is historical) stays identical from either side.
   const openHolder = (h, entity, propBalance) => {
     if (!h) return;
-    openCase(WORKLIST.find(c => c.id === h.payerNo)
-      || { id: h.payerNo, name: h.name, balance: propBalance ?? h.balance ?? 0, status: "active", realSubject: entity?.subject, realSubItem: entity?.subItem });
+    if (h.payerNo === PAYER.payerNo || !entity?.subItem)
+      openCase(WORKLIST.find(c => c.id === h.payerNo) || { id: h.payerNo, name: h.name, balance: propBalance ?? h.balance ?? 0, status: "active" });
+    else
+      openCase({ id: h.payerNo, name: h.name, balance: propBalance ?? h.balance ?? 0, status: "active", realSubject: entity.subject, realSubItem: entity.subItem });
   };
   const runNba = (c) => { setActiveCase(c); openFlow(c.nba.flow, { balance: c.balance, payerName: c.name, subtitle: `${c.name} · ${c.id}` }); };
 
