@@ -102,8 +102,9 @@ function App() {
     return { nominal, indexation, interest: b - nominal - indexation, get balance() { return b; } };
   })();
   const openCase = (c) => { setActiveCase(c); setEntity("all"); setView("case"); window.scrollTo(0, 0); };
-  // open a holder's own account — reuse a known case if the payer exists, else synthesize one from the holder
-  const openHolder = (h) => { if (h) openCase(WORKLIST.find(c => c.id === h.payerNo) || { id: h.payerNo, name: h.name, balance: h.balance || 0, status: "active" }); };
+  // open a holder's own account — reuse a known case if the payer exists, else synthesize one.
+  // carry the property's real holder chain so the current-holder is consistent across both payers.
+  const openHolder = (h, entity) => { if (h) openCase(WORKLIST.find(c => c.id === h.payerNo) || { id: h.payerNo, name: h.name, balance: h.balance || 0, status: "active", holderChain: entity?.holders, propertyName: entity?.name }); };
   const runNba = (c) => { setActiveCase(c); openFlow(c.nba.flow, { balance: c.balance, payerName: c.name, subtitle: `${c.name} · ${c.id}` }); };
 
   // open a guided action flow with payer context

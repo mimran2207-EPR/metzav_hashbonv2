@@ -460,7 +460,7 @@ function HoldersHistoryModal({ entity, onClose, onOpenHolder }) {
                   </div>
                 </div>
                 {/* action */}
-                <button data-focusring onClick={() => { onOpenHolder && onOpenHolder(h); onClose(); }}
+                <button data-focusring onClick={() => { onOpenHolder && onOpenHolder(h, entity); onClose(); }}
                   title={`פתח כרטיס יתרה של ${h.name}`}
                   style={{ display: "inline-flex", alignItems: "center", gap: 6, flex: "none",
                     border: "1px solid var(--teal-300)", background: h.current ? "var(--teal-600)" : "var(--white)",
