@@ -16,7 +16,7 @@ const FlowHost      = lazy(() => import('./flows.jsx').then(m => ({ default: m.F
 import { useTweaks, TweaksPanel, TweakSection, TweakRadio, TweakColor, TweakToggle } from './tweaks-panel.jsx';
 import { SectionHead, Card, Segmented, ToastHost, useMediaQuery } from './ui.jsx';
 import { Icon } from './icons.jsx';
-import { PAYER, TOTALS, SERVICES, TXNS, TXN_TYPES, SUBJECTS, DOCUMENTS, AI_INSIGHTS, QUICK_ACTIONS, NOTES, WORKLIST, STATUS, CASE_TIMELINE, TASKS, TASK_TYPES, CURRENT_CLERK, buildCaseData } from './data.jsx';
+import { PAYER, TOTALS, SERVICES, TXNS, TXN_TYPES, SUBJECTS, DOCUMENTS, AI_INSIGHTS, QUICK_ACTIONS, NOTES, WORKLIST, STATUS, CASE_TIMELINE, TASKS, TASK_TYPES, CURRENT_CLERK, buildCaseData, HOLDER_EXTRA } from './data.jsx';
 import { THEMES, generateThemeFromColor } from './table-utils.jsx';
 import { usePersistedState, loadPref, savePref } from './storage.js';
 import { toast } from './toast.js';
@@ -110,7 +110,7 @@ function App() {
     if (h.payerNo === PAYER.payerNo || !entity?.subItem)
       openCase(WORKLIST.find(c => c.id === h.payerNo) || { id: h.payerNo, name: h.name, balance: propBalance ?? h.balance ?? 0, status: "active" });
     else
-      openCase({ id: h.payerNo, name: h.name, balance: propBalance ?? h.balance ?? 0, status: "active", realSubject: entity.subject, realSubItem: entity.subItem });
+      openCase({ id: h.payerNo, name: h.name, balance: propBalance ?? h.balance ?? 0, status: "active", realSubject: entity.subject, realSubItem: entity.subItem, extraSubItems: HOLDER_EXTRA[h.payerNo] });
   };
   const runNba = (c) => { setActiveCase(c); openFlow(c.nba.flow, { balance: c.balance, payerName: c.name, subtitle: `${c.name} · ${c.id}` }); };
 

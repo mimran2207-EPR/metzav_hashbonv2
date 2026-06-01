@@ -389,7 +389,8 @@ function buildCaseData(c) {
   // opened from a real property's holder chain → show that exact property (same id/name/data/chain),
   // so switching between its holders never fabricates a new property or a second current holder.
   if (c.realSubItem && c.realSubject) {
-    return { subjects: [{ ...c.realSubject, count: 1 }], details: { [c.realSubject.id]: { subItems: [c.realSubItem] } } };
+    const subItems = [c.realSubItem, ...(c.extraSubItems || [])];
+    return { subjects: [{ ...c.realSubject, count: subItems.length }], details: { [c.realSubject.id]: { subItems } } };
   }
   const B = c.balance, idNum = (c.id.replace(/\D/g, "") || "1");
   const holders = [{ name: c.name, payerNo: c.id, from: "01/2020", to: null, current: true, reason: "רכישה" }];
@@ -413,8 +414,23 @@ function buildCaseData(c) {
   };
 }
 
+// extra demo properties shown in a specific historical holder's own account (where they are
+// the current holder), on top of the shared property they were opened from.
+const HOLDER_EXTRA = {
+  "888-DEMO-1": [
+    { id: "5004410", name: "דירת מגורים — דירה ישנה", meta: "רחוב הראשונים 7, דירה 2",
+      propertyTypes: [{ code: "100", desc: "בית מגורים", area: 72, unit: 'מ"ר' }],
+      holders: [{ name: "ישראל לדוגמה (קודם)", payerNo: "888-DEMO-1", balance: 2340, from: "01/2008", to: null, current: true, reason: "רכישה" }],
+      charges: [{ id: "5004410-arn", code: 1, name: "ארנונה", srcYear: 2026, discount: null, arrangement: null, tracking: false, rows: synthRows(2340) }] },
+    { id: "5004411", name: "מחסן צמוד", meta: "רחוב הראשונים 7",
+      propertyTypes: [{ code: "190", desc: "מחסן / אחסנה", area: 9, unit: 'מ"ר' }],
+      holders: [{ name: "ישראל לדוגמה (קודם)", payerNo: "888-DEMO-1", balance: 1180, from: "01/2008", to: null, current: true, reason: "רכישה" }],
+      charges: [{ id: "5004411-arn", code: 1, name: "ארנונה", srcYear: 2026, discount: null, arrangement: null, tracking: false, rows: synthRows(1180) }] },
+  ],
+};
+
 export {
   PAYER, ENTITIES, SUBJECTS, SUBJECT_DETAILS, SERVICES, TOTALS, TXNS, TXN_TYPES, YEARS, YEAR_BALANCES,
   AI_INSIGHTS, AI_ACTIONS, QUICK_ACTIONS, NOTES, DOCUMENTS, LEDGER, LEDGER_COLUMNS, fmt,
-  WORKLIST, STATUS, CASE_TIMELINE, TASKS, TASK_TYPES, CLERKS, CURRENT_CLERK, buildCaseData,
+  WORKLIST, STATUS, CASE_TIMELINE, TASKS, TASK_TYPES, CLERKS, CURRENT_CLERK, buildCaseData, HOLDER_EXTRA,
 };
