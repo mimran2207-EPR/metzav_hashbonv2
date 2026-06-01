@@ -612,14 +612,15 @@ function AllEntitiesView({ subjects, filterSubject, density, txnTypes, onAction,
     holder: (entity) => {
       const current = entity.holders.find(h => h.current);
       const hasH = entity.holders.length > 0;
-      // ✓ only when the viewed payer is the property's current holder; otherwise they left
-      // the property and merely keep a balance — show the history icon, not the ✓.
-      const isMine = current && current.payerNo === activePayerNo;
+      // subjects without a holder chain (children, reports…) belong to the payer, so they are
+      // active (✓). A property is ✓ only when the viewed payer is its current holder; otherwise
+      // they left it and merely keep a balance — show the history marker instead.
+      const isMine = !hasH || (current && current.payerNo === activePayerNo);
       return (
         <td key="holder" style={{ padding: cellPad, textAlign: "center" }}>
           <button onClick={e => { e.stopPropagation(); if (hasH) setHoldersModal(entity); }}
-            aria-label={isMine ? `${current.name} — מחזיק נוכחי`
-              : current ? `מחזיק נוכחי: ${current.name} — לחץ להיסטוריה` : "ללא מחזיק נוכחי"}
+            aria-label={isMine ? (current ? `${current.name} — מחזיק נוכחי` : "מחזיק נוכחי")
+              : `מחזיק נוכחי: ${current.name} — לחץ להיסטוריה`}
             style={{ width: 32, height: 32, display: "grid", placeItems: "center",
               border: isMine ? "1.5px solid var(--ok-fg)" : "1.5px solid var(--teal-300)",
               background: isMine ? "var(--ok-bg)" : "transparent",
