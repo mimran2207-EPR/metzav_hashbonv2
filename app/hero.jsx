@@ -325,8 +325,7 @@ function HeroZone({ p, totals, year, notesCount, docsCount, insights, handlers, 
   );
 }
 
-function ActionBar({ notesCount, year, onYear, handlers }) {
-  const [yearOpen, setYearOpen] = useState(false);
+function ActionBar({ notesCount, handlers }) {
   const narrow = useMediaQuery("(max-width: 900px)");
   const groups = [
     { name: "תקשורת", items: [
@@ -367,33 +366,6 @@ function ActionBar({ notesCount, year, onYear, handlers }) {
           </div>
         </React.Fragment>
       ))}
-      <div style={{ flex: 1 }}/>
-      <div style={{ position: "relative" }}>
-        <button data-focusring onClick={() => setYearOpen(o => !o)} style={{ display: "flex", alignItems: "center", gap: 8,
-          border: "1px solid var(--ink-200)", background: "var(--white)", borderRadius: 999, padding: "7px 14px",
-          cursor: "pointer", fontFamily: "var(--font)", fontSize: 13.5, fontWeight: 600, color: "var(--ink-800)" }}>
-          <Icon name="calendar" size={16} color="var(--teal-500)"/>
-          <span>שנת <span className="num">{year}</span></span>
-          <Icon name="chevdown" size={15} color="var(--ink-400)"/>
-        </button>
-        {yearOpen && (
-          <>
-            <div onClick={() => setYearOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 60 }}/>
-            <div className="mu-rise" style={{ position: "absolute", insetInlineEnd: 0, top: "calc(100% + 6px)", zIndex: 61,
-              background: "#fff", border: "1px solid var(--ink-200)", borderRadius: 12, boxShadow: "var(--shadow-lg)",
-              padding: 6, width: 130, maxHeight: 260, overflowY: "auto" }}>
-              {YEARS.map(y => (
-                <button key={y} onClick={() => { onYear(y); setYearOpen(false); }} className="num"
-                  style={{ display: "block", width: "100%", textAlign: "start", border: "none", cursor: "pointer",
-                    borderRadius: 8, padding: "8px 12px", fontFamily: "var(--font)", fontSize: 14, fontWeight: y === year ? 700 : 500,
-                    background: y === year ? "var(--teal-50)" : "transparent", color: y === year ? "var(--teal-700)" : "var(--ink-700)" }}
-                  onMouseEnter={e => { if (y !== year) e.currentTarget.style.background = "var(--ink-50)"; }}
-                  onMouseLeave={e => { if (y !== year) e.currentTarget.style.background = "transparent"; }}>{y}</button>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
     </div>
   );
 }

@@ -1,9 +1,10 @@
 import React from 'react';
 import { Icon } from './icons.jsx';
 import { Tip } from './ui.jsx';
+import { ThemePicker } from './table-utils.jsx';
 import s from './ui.module.css';
 
-function TopBar({ onCommand, onNav, year, breadcrumb, view, onSwitchView, taskCount = 0 }) {
+function TopBar({ onCommand, onNav, year, breadcrumb, view, onSwitchView, taskCount = 0, themeId, onThemeChange, onCustomTheme }) {
   const NavTab = ({ id, label, badge }) => {
     const active = view === id;
     return (
@@ -64,6 +65,8 @@ function TopBar({ onCommand, onNav, year, breadcrumb, view, onSwitchView, taskCo
       </div>
 
       <div style={{ width: 1, height: 26, background: "var(--ink-200)", flex: "none" }} />
+
+      <ThemePicker activeId={themeId} onChange={onThemeChange} onCustom={onCustomTheme}/>
 
       <div data-focusring tabIndex={0} style={{ display: "flex", alignItems: "center", gap: 9, flex: "none", cursor: "pointer",
         padding: "5px 6px 5px 10px", borderRadius: 999, border: "1px solid var(--ink-200)" }}>

@@ -17,7 +17,7 @@ import { useTweaks, TweaksPanel, TweakSection, TweakRadio, TweakColor, TweakTogg
 import { SectionHead, Card, Segmented, ToastHost, useMediaQuery } from './ui.jsx';
 import { Icon } from './icons.jsx';
 import { PAYER, TOTALS, SERVICES, TXNS, TXN_TYPES, SUBJECTS, DOCUMENTS, AI_INSIGHTS, QUICK_ACTIONS, NOTES, WORKLIST, STATUS, CASE_TIMELINE, TASKS, TASK_TYPES, CURRENT_CLERK, buildCaseData } from './data.jsx';
-import { ThemePicker, THEMES, generateThemeFromColor } from './table-utils.jsx';
+import { THEMES, generateThemeFromColor } from './table-utils.jsx';
 import { usePersistedState, loadPref, savePref } from './storage.js';
 import { toast } from './toast.js';
 
@@ -175,6 +175,7 @@ function App() {
       <TopBar onCommand={() => setCmdOpen(true)}
           onNav={(id) => { if (id === "back") { if (view === "case") setCmdOpen(true); else setView("case"); } }}
           view={view} onSwitchView={setView} taskCount={openTaskCount}
+          themeId={themeId} onThemeChange={setThemeId} onCustomTheme={handleCustomTheme}
           year={year} breadcrumb={view === "worklist"
             ? { name: "משימות שלי", no: `${openTaskCount} פתוחות` }
             : { name: activePayer.name, no: activePayer.payerNo }}/>
@@ -204,15 +205,8 @@ function App() {
         </div>
       </div>
 
-      <div style={{ maxWidth: 1360, margin: "0 auto", width: "100%", padding: "16px 24px 0", boxSizing: "border-box", display: "flex", alignItems: "center", gap: 10 }}>
-        <div style={{ flex: 1 }}><ActionBar notesCount={notes.length} year={year} onYear={setYear} handlers={handlers}/></div>
-        <button data-focusring onClick={() => setTasksOpen(true)} title="משימות"
-          style={{ display: "inline-flex", alignItems: "center", gap: 7, border: "1px solid var(--ink-200)", background: "var(--white)",
-            borderRadius: 999, padding: "6px 13px", cursor: "pointer", fontFamily: "var(--font)", fontSize: 13, fontWeight: 600, color: "var(--ink-700)" }}>
-          <Icon name="notes" size={15} color="var(--teal-600)"/> משימות
-          {openTaskCount > 0 && <span className="num" style={{ background: "var(--amber)", color: "#fff", fontSize: 11, fontWeight: 700, borderRadius: 999, padding: "1px 7px" }}>{openTaskCount}</span>}
-        </button>
-        <ThemePicker activeId={themeId} onChange={setThemeId} onCustom={handleCustomTheme}/>
+      <div style={{ maxWidth: 1360, margin: "0 auto", width: "100%", padding: "16px 24px 0", boxSizing: "border-box" }}>
+        <ActionBar notesCount={notes.length} handlers={handlers}/>
       </div>
 
       {/* main — full width, sidebar removed; AI is floating */}
