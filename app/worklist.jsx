@@ -304,7 +304,7 @@ function CaseQueue({ onOpenCase, onRunNba }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {filtered.map((c, i) => {
           const prio = CASE_PRIORITY[c.priority];
-          const st = STATUS[c.status];
+          const st = STATUS[c.status] || STATUS.active;
           return (
             <div key={c.id} onClick={() => onOpenCase(c)} data-focusring tabIndex={0}
               role="button"

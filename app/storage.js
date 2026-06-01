@@ -22,14 +22,6 @@ export function savePref(key, value) {
   }
 }
 
-export function clearPrefs() {
-  try {
-    Object.keys(window.localStorage)
-      .filter(k => k.startsWith(PREFIX))
-      .forEach(k => window.localStorage.removeItem(k));
-  } catch {/* ignore */}
-}
-
 // React hook: state that auto-persists under `key`.
 import { useState, useEffect } from "react";
 export function usePersistedState(key, fallback) {

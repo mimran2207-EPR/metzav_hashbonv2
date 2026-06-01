@@ -96,7 +96,7 @@ function App() {
   const caseSubjects = caseData.subjects;
   const activeSubject = caseSubjects.find(s => s.id === entity) || null;
   // case-aware payer identity + totals (demo case = full data; others = proportional split)
-  const activePayer = isDemoCase ? PAYER : { ...PAYER, name: activeCase.name, payerNo: activeCase.id, status: STATUS[activeCase.status].label };
+  const activePayer = isDemoCase ? PAYER : { ...PAYER, name: activeCase.name, payerNo: activeCase.id, status: (STATUS[activeCase.status] || STATUS.active).label };
   // year-aware totals: the demo payer's open year shows the real figures; a closed year shows
   // that year's closing balance. Other cases keep their single balance regardless of year.
   const totals = (isDemoCase && year === CURRENT_YEAR) ? TOTALS : (() => {
@@ -121,7 +121,6 @@ function App() {
     else
       openCase({ id: h.payerNo, name: h.name, balance: propBalance ?? h.balance ?? 0, status: "active", realSubject: entity.subject, realSubItem: entity.subItem, extraSubItems: HOLDER_EXTRA[h.payerNo] });
   };
-  const runNba = (c) => { setActiveCase(c); openFlow(c.nba.flow, { balance: c.balance, payerName: c.name, subtitle: `${c.name} · ${c.id}` }); };
 
   // open a guided action flow with payer context
   const openFlow = (id, extra = {}) => setFlow({ id, ctx: {
