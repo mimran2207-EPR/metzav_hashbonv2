@@ -621,11 +621,11 @@ function AllEntitiesView({ subjects, filterSubject, density, txnTypes, onAction,
             aria-label={isMine ? `${current.name} — מחזיק נוכחי`
               : current ? `מחזיק נוכחי: ${current.name} — לחץ להיסטוריה` : "ללא מחזיק נוכחי"}
             style={{ width: 32, height: 32, display: "grid", placeItems: "center",
-              border: isMine ? "1.5px solid var(--ok-fg)" : "1.5px solid var(--ink-300)",
+              border: isMine ? "1.5px solid var(--ok-fg)" : hasH ? "1.5px solid var(--teal-300)" : "1.5px solid var(--ink-300)",
               background: isMine ? "var(--ok-bg)" : "transparent",
               borderRadius: 8, cursor: hasH ? "pointer" : "default", transition: "all .13s" }}>
             {isMine ? <span style={{ fontSize: 16, color: "var(--ok-fg)", fontWeight: 800, lineHeight: 1 }}>✓</span>
-              : <Icon name="history" size={14} color="var(--ink-400)"/>}
+              : <Icon name="history" size={14} color={hasH ? "var(--teal-600)" : "var(--ink-400)"}/>}
           </button>
         </td>);},
     bal:    (entity, i, isOpen) => {
