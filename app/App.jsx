@@ -102,6 +102,8 @@ function App() {
     return { nominal, indexation, interest: b - nominal - indexation, get balance() { return b; } };
   })();
   const openCase = (c) => { setActiveCase(c); setEntity("all"); setView("case"); window.scrollTo(0, 0); };
+  // open a holder's own account — reuse a known case if the payer exists, else synthesize one from the holder
+  const openHolder = (h) => { if (h) openCase(WORKLIST.find(c => c.id === h.payerNo) || { id: h.payerNo, name: h.name, balance: h.balance || 0, status: "active" }); };
   const runNba = (c) => { setActiveCase(c); openFlow(c.nba.flow, { balance: c.balance, payerName: c.name, subtitle: `${c.name} · ${c.id}` }); };
 
   // open a guided action flow with payer context
@@ -245,6 +247,7 @@ function App() {
                 density={density}
                 txnTypes={TXN_TYPES}
                 onAction={runAction}
+                onOpenHolder={openHolder}
                 onOpenWide={(naxas) => { setWideNaxas(naxas || null); setWideOpen(true); }}/>
             </div>
           </Card>

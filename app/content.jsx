@@ -483,7 +483,7 @@ function HoldersHistoryModal({ entity, onClose, onOpenHolder }) {
 // Level 1: entity row with named columns (matches legacy MASTER screen layout).
 // Level 2: PropertyContextPanel + charges sub-table, inline below the row.
 // Level 3: TxnTable per charge, inline below the charge row.
-function AllEntitiesView({ subjects, filterSubject, density, txnTypes, onAction, onOpenWide, detailsMap }) {
+function AllEntitiesView({ subjects, filterSubject, density, txnTypes, onAction, onOpenWide, detailsMap, onOpenHolder }) {
   const [openEntity, setOpenEntity] = useState(null);
   const [openCharge, setOpenCharge] = useState(null);
   const [typesModal, setTypesModal] = useState(null);   // entity for property-types modal
@@ -846,7 +846,7 @@ function AllEntitiesView({ subjects, filterSubject, density, txnTypes, onAction,
     {/* ── modals ── */}
     <PropertyTypesModal entity={typesModal} onClose={() => setTypesModal(null)}/>
     <HoldersHistoryModal entity={holdersModal} onClose={() => setHoldersModal(null)}
-      onOpenHolder={h => toast(`פותח כרטיס יתרה — ${h.name} · ${h.payerNo}`, "user")}/>
+      onOpenHolder={onOpenHolder}/>
     </>
   );
 }
