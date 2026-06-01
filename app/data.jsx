@@ -59,7 +59,7 @@ const SUBJECT_DETAILS = {
         { code: "190", desc: "מחסן בניין",    area: 8,   unit: 'מ"ר' },
       ],
       holders: [
-        { name: "ישראל לדוגמה", payerNo: "999-DEMO", from: "10/2019", to: null, current: true, reason: "רכישה" },
+        { name: "ישראל לדוגמה", payerNo: "999-DEMO", balance: 13184, from: "10/2019", to: null, current: true, reason: "רכישה" },
         { name: "לדוגמה רחל", payerNo: "888-DEMO-2", balance: 9240, from: "03/2014", to: "10/2019", reason: "מכירה" },
         { name: "ישראל לדוגמה (קודם)", payerNo: "888-DEMO-1", balance: 4180, from: "08/2008", to: "03/2014", reason: "ירושה" },
       ],
@@ -75,7 +75,7 @@ const SUBJECT_DETAILS = {
       ],
       holders: [
         { name: "כהן דוד", payerNo: "028841200", balance: 28960, from: "10/2019", to: null, current: true, reason: "רכישה" },
-        { name: "ישראל לדוגמה", payerNo: "999-DEMO", from: "05/2011", to: "10/2019", reason: "מכירה" },
+        { name: "ישראל לדוגמה", payerNo: "999-DEMO", balance: 4120, from: "05/2011", to: "10/2019", reason: "מכירה" },
       ],
       charges: [
         { id: "arnona_b", code: 1, name: "ארנונה", balance: 0, srcYear: 2026, discount: null, arrangement: null, tracking: false },
@@ -98,7 +98,7 @@ const SUBJECT_DETAILS = {
       ],
       holders: [
         { name: "לדוגמה רחל", payerNo: "888-DEMO-2", balance: 9240, from: "10/2019", to: null, current: true, reason: "החלפת מחזיק" },
-        { name: "ישראל לדוגמה", payerNo: "999-DEMO", from: "03/2014", to: "10/2019", reason: "החלפת מחזיק" },
+        { name: "ישראל לדוגמה", payerNo: "999-DEMO", balance: 1386, from: "03/2014", to: "10/2019", reason: "החלפת מחזיק" },
       ],
       charges: [
         { id: "water", code: 4, name: "מים וביוב", txns: "water", srcYear: 2026, discount: null, arrangement: 30, arrangementDesc: "פריסה 6 תשלומים", tracking: false },

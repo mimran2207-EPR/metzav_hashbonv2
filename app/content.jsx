@@ -406,7 +406,7 @@ function PropertyTypesModal({ entity, onClose }) {
 
 // HoldersHistoryModal — shows all historical holders for an entity.
 // Each holder has a "פתח כרטיס יתרה" button to navigate to their account.
-function HoldersHistoryModal({ entity, onClose, onOpenHolder, activePayerNo }) {
+function HoldersHistoryModal({ entity, onClose, onOpenHolder }) {
   if (!entity) return null;
   const holders = entity.holders || [];
   const propBalance = (entity.charges || []).reduce((a, c) => a + chargeBalance(c), 0);
@@ -435,11 +435,10 @@ function HoldersHistoryModal({ entity, onClose, onOpenHolder, activePayerNo }) {
             {holders.length === 0 ? (
               <div style={{ textAlign: "center", color: "var(--ink-400)", padding: "24px", fontSize: 13 }}>אין נתוני מחזיקים</div>
             ) : holders.map((h, i) => {
-              const viewing = activePayerNo != null && h.payerNo === activePayerNo;
+              const bal = h.balance || 0;
               return (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 20px",
-                background: h.current ? "var(--teal-50)" : viewing ? "var(--ink-50)" : "#fff",
-                boxShadow: viewing ? "inset 3px 0 0 var(--teal-500)" : "none",
+                background: h.current ? "var(--teal-50)" : "#fff",
                 borderBottom: i < holders.length - 1 ? "1px solid var(--ink-100)" : "none" }}>
                 {/* avatar */}
                 <div style={{ width: 40, height: 40, borderRadius: 999, flex: "none", display: "grid", placeItems: "center",
@@ -455,14 +454,19 @@ function HoldersHistoryModal({ entity, onClose, onOpenHolder, activePayerNo }) {
                     {h.current
                       ? <Chip tone="green" style={{ fontSize: 10 }}>מחזיק נוכחי</Chip>
                       : <Chip tone="gray" style={{ fontSize: 10 }}>מחזיק היסטורי</Chip>}
-                    {viewing && <span style={{ fontSize: 10, fontWeight: 700, color: "var(--teal-700)",
-                      background: "var(--teal-100)", borderRadius: 999, padding: "1px 8px" }}>צופים בכרטיס</span>}
-                    {h.reason && <span style={{ fontSize: 11, color: "var(--ink-muted)" }}>· {h.reason}</span>}
                   </div>
                   <div style={{ fontSize: 12, color: "var(--ink-muted)", marginTop: 2 }}>
                     משלם <span className="num">{h.payerNo}</span>
                     {" · "}{h.from} – {h.to || "היום"}
                   </div>
+                </div>
+                {/* balance */}
+                <div style={{ flex: "none", textAlign: "end" }}>
+                  <div className="num" style={{ fontSize: 15, fontWeight: 800, lineHeight: 1.1,
+                    color: bal > 0 ? "var(--ink-900)" : "var(--ok-fg)" }}>
+                    {bal > 0 ? `₪${fmt(bal)}` : "0 ✓"}
+                  </div>
+                  <div style={{ fontSize: 10.5, color: "var(--ink-muted)" }}>יתרה</div>
                 </div>
                 {/* action */}
                 <button data-focusring onClick={() => { onOpenHolder && onOpenHolder(h, entity, propBalance); onClose(); }}
@@ -857,7 +861,7 @@ function AllEntitiesView({ subjects, filterSubject, density, txnTypes, onAction,
     {/* ── modals ── */}
     <PropertyTypesModal entity={typesModal} onClose={() => setTypesModal(null)}/>
     <HoldersHistoryModal entity={holdersModal} onClose={() => setHoldersModal(null)}
-      onOpenHolder={onOpenHolder} activePayerNo={activePayerNo}/>
+      onOpenHolder={onOpenHolder}/>
     </>
   );
 }
