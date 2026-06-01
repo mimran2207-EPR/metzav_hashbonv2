@@ -177,7 +177,7 @@ function PropertyContextPanel({ subItem, subject, totalBalance, onAction }) {
                       <span style={{ fontSize: 13, fontWeight: 600, color: "var(--ink-800)" }}>{h.name}</span>
                       {h.current
                         ? <Chip tone="green" style={{ fontSize: 10 }}>נוכחי</Chip>
-                        : <Chip tone="gray" style={{ fontSize: 10 }}>קודם</Chip>}
+                        : <Chip tone="gray" style={{ fontSize: 10 }}>מחזיק היסטורי</Chip>}
                       {h.reason && <span style={{ fontSize: 11, color: "var(--ink-muted)" }}>· {h.reason}</span>}
                     </div>
                     <div style={{ fontSize: 12, color: "var(--ink-muted)" }}>
@@ -454,7 +454,7 @@ function HoldersHistoryModal({ entity, onClose, onOpenHolder, activePayerNo }) {
                     <span style={{ fontSize: 14, fontWeight: 700, color: "var(--ink-800)" }}>{h.name}</span>
                     {h.current
                       ? <Chip tone="green" style={{ fontSize: 10 }}>מחזיק נוכחי</Chip>
-                      : <Chip tone="gray" style={{ fontSize: 10 }}>קודם</Chip>}
+                      : <Chip tone="gray" style={{ fontSize: 10 }}>מחזיק היסטורי</Chip>}
                     {viewing && <span style={{ fontSize: 10, fontWeight: 700, color: "var(--teal-700)",
                       background: "var(--teal-100)", borderRadius: 999, padding: "1px 8px" }}>צופים בכרטיס</span>}
                     {h.reason && <span style={{ fontSize: 11, color: "var(--ink-muted)" }}>· {h.reason}</span>}
@@ -612,15 +612,19 @@ function AllEntitiesView({ subjects, filterSubject, density, txnTypes, onAction,
     holder: (entity) => {
       const current = entity.holders.find(h => h.current);
       const hasH = entity.holders.length > 0;
+      // ✓ only when the viewed payer is the property's current holder; otherwise they left
+      // the property and merely keep a balance — show the history icon, not the ✓.
+      const isMine = current && current.payerNo === activePayerNo;
       return (
         <td key="holder" style={{ padding: cellPad, textAlign: "center" }}>
           <button onClick={e => { e.stopPropagation(); if (hasH) setHoldersModal(entity); }}
-            aria-label={current ? `${current.name} — לחץ לפרטים` : "ללא מחזיק נוכחי"}
+            aria-label={isMine ? `${current.name} — מחזיק נוכחי`
+              : current ? `מחזיק נוכחי: ${current.name} — לחץ להיסטוריה` : "ללא מחזיק נוכחי"}
             style={{ width: 32, height: 32, display: "grid", placeItems: "center",
-              border: current ? "1.5px solid var(--ok-fg)" : "1.5px solid var(--ink-300)",
-              background: current ? "var(--ok-bg)" : "transparent",
+              border: isMine ? "1.5px solid var(--ok-fg)" : "1.5px solid var(--ink-300)",
+              background: isMine ? "var(--ok-bg)" : "transparent",
               borderRadius: 8, cursor: hasH ? "pointer" : "default", transition: "all .13s" }}>
-            {current ? <span style={{ fontSize: 16, color: "var(--ok-fg)", fontWeight: 800, lineHeight: 1 }}>✓</span>
+            {isMine ? <span style={{ fontSize: 16, color: "var(--ok-fg)", fontWeight: 800, lineHeight: 1 }}>✓</span>
               : <Icon name="history" size={14} color="var(--ink-400)"/>}
           </button>
         </td>);},
