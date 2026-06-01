@@ -56,13 +56,15 @@ function IdentityCard({ p }) {
   );
 }
 
-function BalanceCard({ totals, year, onPay, statusBadge }) {
+function BalanceCard({ totals, year, onPay, statusBadge, onYear }) {
+  const [pickerOpen, setPickerOpen] = useState(false);
   const parts = [
     { label: "נומינלי (קרן)", val: totals.nominal },
     { label: "הצמדה", val: totals.indexation },
     { label: "ריבית", val: totals.interest },
   ];
   return (
+    <>
     <Card pad={22} style={{ display: "flex", flexDirection: "column", color: "#fff",
       background: "linear-gradient(150deg,var(--teal-800) 0%,var(--teal-700) 48%,var(--teal-600) 100%)",
       border: "1px solid transparent",
@@ -72,10 +74,13 @@ function BalanceCard({ totals, year, onPay, statusBadge }) {
         background: "rgba(255,255,255,.08)", pointerEvents: "none" }}/>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
         <span style={{ fontSize: 13.5, fontWeight: 600, color: "rgba(255,255,255,.85)" }}>יתרה למשלם</span>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,.16)", color: "#fff",
-          fontSize: 12, fontWeight: 600, padding: "3px 10px", borderRadius: 999, lineHeight: 1.4 }}>
+        <button data-focusring onClick={() => onYear && setPickerOpen(true)} title="בחר שנה / כל השנים"
+          style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,.16)", color: "#fff",
+          fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 999, lineHeight: 1.4,
+          border: "1px solid rgba(255,255,255,.28)", cursor: onYear ? "pointer" : "default", fontFamily: "var(--font)" }}>
           <Icon name="calendar" size={13} color="#fff"/> שנת {year}
-        </span>
+          {onYear && <Icon name="chevdown" size={13} color="#fff"/>}
+        </button>
       </div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 10, position: "relative" }}>
         <span className="num" style={{ fontSize: "var(--text-hero)", fontWeight: 800, lineHeight: 1, color: "#fff" }}>
@@ -102,6 +107,8 @@ function BalanceCard({ totals, year, onPay, statusBadge }) {
         <PillButton variant="light" icon="sigma" onClick={() => toast("נפתח סיכום כספי למשלם", "sigma")}>סיכום</PillButton>
       </div>
     </Card>
+    {pickerOpen && onYear && <YearPickerModal year={year} onYear={onYear} onClose={() => setPickerOpen(false)}/>}
+    </>
   );
 }
 
@@ -197,133 +204,52 @@ function AIStrip({ insights, onCopilot, onAction }) {
   );
 }
 
-// YearNavigator — multi-year timeline. Scrollable strip of years around the current,
-// with a button per year (current = highlighted teal, others = gray). Years with open
-// debt show a red dot. Button "כל השנים" opens a modal with full year grid + balances.
-function YearNavigator({ year, onYear }) {
-  const [allOpen, setAllOpen] = useState(false);
-  const visibleCount = 7;
-  const idx = YEARS.indexOf(year);
-  const start = Math.max(0, idx - Math.floor(visibleCount / 2));
-  const end = Math.min(YEARS.length, start + visibleCount);
-  const visible = YEARS.slice(start, end);
-  const maxBal = Math.max(...YEARS.map(y => YEAR_BALANCES[y]), 1); // for trend-bar scaling
-
+// YearPickerModal — switch the displayed fiscal year (opened from the balance-card year chip).
+// Shows every year with its collection status + balance, plus the cumulative debt across years.
+function YearPickerModal({ year, onYear, onClose }) {
   return (
     <>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, padding: "12px 14px",
-        background: "var(--white)", border: "1px solid var(--ink-100)", borderRadius: 16,
-        boxShadow: "0 1px 2px rgba(18,48,60,.04), 0 12px 30px rgba(18,48,60,.08)" }}>
-        {/* cumulative open debt across all years */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 1, flex: "none",
-          padding: "4px 12px", borderRadius: 10, background: "var(--teal-50)", border: "1px solid var(--teal-100)" }}>
-          <span style={{ fontSize: 10.5, fontWeight: 600, color: "var(--teal-700)", whiteSpace: "nowrap" }}>חוב מצטבר · כל השנים</span>
-          <span className="num" style={{ fontSize: 15, fontWeight: 800, color: "var(--teal-800)" }}>₪{fmt(YEAR_TOTAL)}</span>
-        </div>
-        <div style={{ width: 1, height: 32, background: "var(--ink-100)" }}/>
-        <button data-focusring onClick={() => { const prev = YEARS[Math.max(0, idx - 1)]; if (prev) onYear(prev); }}
-          disabled={idx === 0} style={{ display: "flex", alignItems: "center", justifyContent: "center",
-          width: 32, height: 32, border: "1px solid var(--ink-200)", background: "var(--white)", borderRadius: 8,
-          cursor: idx === 0 ? "not-allowed" : "pointer", color: idx === 0 ? "var(--ink-300)" : "var(--teal-600)",
-          opacity: idx === 0 ? 0.5 : 1, transition: "all .15s ease" }}>
-          <Icon name="chevright" size={18}/>
-        </button>
-        <div style={{ display: "flex", alignItems: "flex-end", gap: 8, flex: 1, justifyContent: "center", minWidth: 0 }}>
-          {visible.map(y => {
-            const balance = YEAR_BALANCES[y];
-            const hasDebt = balance > 0;
-            const isCurrent = y === year;
-            const st = YEAR_STATUS[YEAR_INFO[y].status] || YEAR_STATUS.settled;
-            const c = TONE[st.tone];
-            const barH = hasDebt ? Math.max(4, Math.round((balance / maxBal) * 22)) : 3;
-            return (
-              <button key={y} onClick={() => onYear(y)}
-                data-focusring
-                aria-label={`שנת ${y} — ${st.label}${hasDebt ? ` · יתרה ₪${fmt(balance)}` : ""}`}
-                aria-current={isCurrent ? "page" : undefined}
-                style={{
-                  position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-                  border: isCurrent ? `1.5px solid ${c.fg}` : "1px solid var(--ink-200)",
-                  background: isCurrent ? c.bg : "var(--white)", borderRadius: 10,
-                  padding: "7px 12px 6px",
-                  cursor: "pointer", fontFamily: "var(--font)", fontSize: 13, fontWeight: isCurrent ? 700 : 600,
-                  color: isCurrent ? c.fg : "var(--ink-600)", transition: "all .15s ease",
-                  minWidth: 64 }}>
-                <span className="num" style={{ fontSize: 13 }}>{y}</span>
-                {/* Balance amount — coloured by the year's collection status */}
-                <span className="num" style={{ fontSize: 10.5, fontWeight: 700, lineHeight: 1, color: hasDebt ? c.fg : "var(--ink-400)" }}>
-                  {hasDebt ? `₪${fmt(balance)}` : "0 ✓"}
-                </span>
-                {/* trend bar — height ∝ balance, coloured by status */}
-                <span style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", height: 22, width: "72%" }}>
-                  <span style={{ display: "block", width: "100%", height: barH, borderRadius: 2,
-                    background: hasDebt ? c.fg : "var(--ink-200)", transition: "height .2s ease, background .2s ease" }}/>
-                </span>
-              </button>
-            );
-          })}
-        </div>
-        <button data-focusring onClick={() => { const next = YEARS[Math.min(YEARS.length - 1, idx + 1)]; if (next) onYear(next); }}
-          disabled={idx === YEARS.length - 1} style={{ display: "flex", alignItems: "center", justifyContent: "center",
-          width: 32, height: 32, border: "1px solid var(--ink-200)", background: "var(--white)", borderRadius: 8,
-          cursor: idx === YEARS.length - 1 ? "not-allowed" : "pointer", color: idx === YEARS.length - 1 ? "var(--ink-300)" : "var(--teal-600)",
-          opacity: idx === YEARS.length - 1 ? 0.5 : 1, transition: "all .15s ease" }}>
-          <Icon name="chevleft" size={18}/>
-        </button>
-        <div style={{ width: 1, height: 32, background: "var(--ink-100)" }}/>
-        <button data-focusring onClick={() => setAllOpen(true)} style={{
-          display: "flex", alignItems: "center", gap: 6, border: "1px solid var(--ink-200)",
-          background: "var(--white)", borderRadius: 8, padding: "7px 12px", cursor: "pointer",
-          fontFamily: "var(--font)", fontSize: 13, fontWeight: 600, color: "var(--ink-600)",
-          transition: "all .15s ease" }}>
-          <Icon name="calendar" size={16} color="var(--ink-400)"/>
-          כל השנים
-        </button>
-      </div>
-
-      {allOpen && (
-        <>
-          <div onClick={() => setAllOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(20,38,50,.4)", zIndex: 6000 }}/>
-          <div onClick={e => e.stopPropagation()} className="mu-rise"
-            role="dialog" aria-modal="true" aria-labelledby="year-picker-title"
-            style={{ position: "fixed", inset: 0, zIndex: 6001,
-              display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
-            <div style={{ background: "#fff", borderRadius: 16, boxShadow: "var(--shadow-lg)", padding: "24px",
-              width: "100%", maxWidth: 540, maxHeight: "80vh", overflow: "auto" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-                <span id="year-picker-title" style={{ fontSize: 18, fontWeight: 700, color: "var(--ink-900)" }}>בחר שנה</span>
-                <button data-focusring onClick={() => setAllOpen(false)} aria-label="סגור חלון בחר שנה"
-                  style={{ width: 32, height: 32, display: "grid", placeItems: "center", border: "none",
-                  background: "var(--ink-100)", borderRadius: 8, cursor: "pointer", fontSize: 16,
-                  color: "var(--ink-600)", transition: "background .12s ease" }}>✕</button>
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
-                {YEARS.map(y => {
-                  const balance = YEAR_BALANCES[y];
-                  const hasDebt = balance > 0;
-                  const st = YEAR_STATUS[YEAR_INFO[y].status] || YEAR_STATUS.settled;
-                  const c = TONE[st.tone];
-                  return (
-                    <button key={y} onClick={() => { onYear(y); setAllOpen(false); }}
-                      data-focusring
-                      aria-label={`שנת ${y} — ${st.label}${hasDebt ? ` · יתרה ₪${fmt(balance)}` : ""}`}
-                      aria-current={y === year ? "page" : undefined}
-                      style={{
-                        display: "flex", flexDirection: "column", alignItems: "center", gap: 5, padding: "12px 10px",
-                        border: y === year ? `1.5px solid ${c.fg}` : "1px solid var(--ink-200)",
-                        background: y === year ? c.bg : "var(--white)", borderRadius: 10,
-                        cursor: "pointer", fontFamily: "var(--font)", transition: "all .15s ease" }}>
-                      <span className="num" style={{ fontSize: 15, fontWeight: y === year ? 700 : 600, color: y === year ? c.fg : "var(--ink-800)" }}>{y}</span>
-                      <span className="num" style={{ fontSize: 13, fontWeight: 700, color: hasDebt ? c.fg : "var(--ink-400)" }}>{hasDebt ? `₪${fmt(balance)}` : "0 ✓"}</span>
-                      <span style={{ fontSize: 10.5, fontWeight: 600, color: c.fg, background: c.bg, borderRadius: 999, padding: "1px 8px" }}>{st.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(20,38,50,.4)", zIndex: 6000 }}/>
+      <div onClick={e => e.stopPropagation()} className="mu-rise"
+        role="dialog" aria-modal="true" aria-labelledby="year-picker-title"
+        style={{ position: "fixed", inset: 0, zIndex: 6001, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+        <div style={{ background: "#fff", borderRadius: 16, boxShadow: "var(--shadow-lg)", padding: "24px",
+          width: "100%", maxWidth: 540, maxHeight: "80vh", overflow: "auto" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+            <span id="year-picker-title" style={{ fontSize: 18, fontWeight: 700, color: "var(--ink-900)" }}>בחר שנה</span>
+            <button data-focusring onClick={onClose} aria-label="סגור חלון בחר שנה"
+              style={{ width: 32, height: 32, display: "grid", placeItems: "center", border: "none",
+              background: "var(--ink-100)", borderRadius: 8, cursor: "pointer", fontSize: 16,
+              color: "var(--ink-600)", transition: "background .12s ease" }}>✕</button>
           </div>
-        </>
-      )}
+          <div style={{ fontSize: 12.5, color: "var(--ink-muted)", marginBottom: 18 }}>
+            חוב מצטבר · כל השנים <span className="num" style={{ fontWeight: 800, color: "var(--teal-700)" }}>₪{fmt(YEAR_TOTAL)}</span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
+            {YEARS.map(y => {
+              const balance = YEAR_BALANCES[y];
+              const hasDebt = balance > 0;
+              const st = YEAR_STATUS[YEAR_INFO[y].status] || YEAR_STATUS.settled;
+              const c = TONE[st.tone];
+              return (
+                <button key={y} onClick={() => { onYear(y); onClose(); }}
+                  data-focusring
+                  aria-label={`שנת ${y} — ${st.label}${hasDebt ? ` · יתרה ₪${fmt(balance)}` : ""}`}
+                  aria-current={y === year ? "page" : undefined}
+                  style={{
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: 5, padding: "12px 10px",
+                    border: y === year ? `1.5px solid ${c.fg}` : "1px solid var(--ink-200)",
+                    background: y === year ? c.bg : "var(--white)", borderRadius: 10,
+                    cursor: "pointer", fontFamily: "var(--font)", transition: "all .15s ease" }}>
+                  <span className="num" style={{ fontSize: 15, fontWeight: y === year ? 700 : 600, color: y === year ? c.fg : "var(--ink-800)" }}>{y}</span>
+                  <span className="num" style={{ fontSize: 13, fontWeight: 700, color: hasDebt ? c.fg : "var(--ink-400)" }}>{hasDebt ? `₪${fmt(balance)}` : "0 ✓"}</span>
+                  <span style={{ fontSize: 10.5, fontWeight: 600, color: c.fg, background: c.bg, borderRadius: 999, padding: "1px 8px" }}>{st.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
     </>
   );
 }
@@ -333,10 +259,9 @@ function HeroZone({ p, totals, year, yearBadge, notesCount, docsCount, insights,
     <div className="mu-rise" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "1.15fr 1.3fr 1fr", gap: 14, alignItems: "stretch" }}>
         <IdentityCard p={p}/>
-        <BalanceCard totals={totals} year={year} onPay={handlers.onPay} statusBadge={yearBadge}/>
+        <BalanceCard totals={totals} year={year} onPay={handlers.onPay} statusBadge={yearBadge} onYear={onYear}/>
         <AlertsCard notesCount={notesCount} docsCount={docsCount} onNotes={handlers.onNotes} onDocs={handlers.onDocs} onEnforce={handlers.onEnforce}/>
       </div>
-      <YearNavigator year={year} onYear={onYear}/>
       {showStrip && <AIStrip insights={insights} onCopilot={handlers.onCopilot} onAction={handlers.onFlow}/>}
     </div>
   );
