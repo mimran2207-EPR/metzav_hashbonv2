@@ -300,12 +300,31 @@ const YEARS = Array.from({ length: 2026 - 2007 + 1 }, (_, i) => 2026 - i);
 // are settled (0); a few carry open debt. Drives the year navigator + window.
 const CURRENT_YEAR = YEARS[0]; // the open (current) fiscal year — others are closed
 
-const YEAR_BALANCES = (() => {
-  const open = { 2026: 13574, 2025: 4120, 2023: 880, 2022: 2650, 2020: 1490, 2018: 760 };
+// per-collection-status label + tone (drives the year strip colours and the balance badge)
+const YEAR_STATUS = {
+  open:        { label: "שנה שוטפת", tone: "teal"  },
+  debt:        { label: "בגבייה",    tone: "red"   },
+  arrangement: { label: "בהסדר",     tone: "amber" },
+  enforcement: { label: "באכיפה",    tone: "red"   },
+  settled:     { label: "סולקה",     tone: "green" },
+};
+// YEAR_INFO — per fiscal year: principal (קרן), updated balance (כולל ריבית+הצמדה) and status.
+// Years not listed are settled (fully paid, 0).
+const YEAR_INFO = (() => {
+  const open = {
+    2026: { principal: 11220, balance: 13574, status: "open" },
+    2025: { principal: 3650,  balance: 4120,  status: "arrangement" },
+    2023: { principal: 760,   balance: 880,   status: "enforcement" },
+    2022: { principal: 2310,  balance: 2650,  status: "debt" },
+    2020: { principal: 1300,  balance: 1490,  status: "debt" },
+    2018: { principal: 680,   balance: 760,   status: "debt" },
+  };
   const o = {};
-  YEARS.forEach(y => { o[y] = open[y] || 0; });
+  YEARS.forEach(y => { o[y] = open[y] || { principal: 0, balance: 0, status: "settled" }; });
   return o;
 })();
+const YEAR_BALANCES = Object.fromEntries(YEARS.map(y => [y, YEAR_INFO[y].balance]));
+const YEAR_TOTAL = YEARS.reduce((a, y) => a + YEAR_INFO[y].balance, 0); // cumulative open debt, all years
 
 const AI_INSIGHTS = [
   { id: "growth", tone: "warn", icon: "trend",
@@ -450,6 +469,16 @@ function synthRows(balance, year = 2026) {
   ];
 }
 
+// paidRows — a fully-settled charge: yearly charge debited then paid in full, ending at 0.
+// Gives closed/settled years real (balanced) transaction history instead of an empty row.
+function paidRows(charge, year) {
+  if (charge <= 0) return synthRows(0, year);
+  return [
+    { date: `01/01/${year}`, type: 1,   ref: "חיוב שנתי", dc: "ח", nominal: charge, addon: 0, bal: charge },
+    { date: `20/06/${year}`, type: 100, ref: "BANK",      dc: "ז", nominal: charge, addon: 0, bal: 0 },
+  ];
+}
+
 // buildCaseData — per-case entities/charges/transactions. The demo payer returns
 // the rich global data; every other case gets its own set summing to its balance,
 // so the drill view always reflects the open case (no more "demo data" mismatch).
@@ -457,14 +486,17 @@ function synthRows(balance, year = 2026) {
 // that year's closing balance: same subject, with that year's charges and transactions.
 function buildYearData(year) {
   const B = YEAR_BALANCES[year] || 0;
-  const arn = Math.round(B * 0.72);
+  const settled = B === 0;            // a closed year with no debt still has paid history
+  const arn = settled ? 3200 : Math.round(B * 0.72);
+  const shm = settled ? 640 : B - arn;
+  const rows = (amt) => settled ? paidRows(amt, year) : synthRows(amt, year);
   const holders = [{ name: PAYER.name, payerNo: PAYER.payerNo, balance: B, from: "10/2019", to: null, current: true, reason: "רכישה" }];
   const subItems = [{
     id: `arn-${year}`, name: "דירת מגורים", meta: "רחוב הדוגמה 1, דירה 1",
     propertyTypes: [{ code: "100", desc: "בית מגורים", area: 90, unit: 'מ"ר' }], holders,
     charges: [
-      { id: `arn-${year}-a`, code: 1, name: "ארנונה",      srcYear: year, discount: null, arrangement: null, tracking: false, rows: synthRows(arn, year) },
-      { id: `arn-${year}-s`, code: 2, name: "אגרת שמירה", srcYear: year, discount: null, arrangement: null, tracking: false, rows: synthRows(B - arn, year) },
+      { id: `arn-${year}-a`, code: 1, name: "ארנונה",      srcYear: year, settled, discount: null, arrangement: null, tracking: false, rows: rows(arn) },
+      { id: `arn-${year}-s`, code: 2, name: "אגרת שמירה", srcYear: year, settled, discount: null, arrangement: null, tracking: false, rows: rows(shm) },
     ],
   }];
   return {
@@ -523,6 +555,7 @@ const HOLDER_EXTRA = {
 
 export {
   PAYER, ENTITIES, SUBJECTS, SUBJECT_DETAILS, SERVICES, TOTALS, TXNS, TXN_TYPES, YEARS, YEAR_BALANCES, CURRENT_YEAR,
+  YEAR_INFO, YEAR_STATUS, YEAR_TOTAL,
   AI_INSIGHTS, AI_ACTIONS, QUICK_ACTIONS, NOTES, DOCUMENTS, LEDGER, LEDGER_COLUMNS, fmt,
   WORKLIST, STATUS, CASE_TIMELINE, TASKS, TASK_TYPES, CLERKS, CURRENT_CLERK, buildCaseData, HOLDER_EXTRA,
 };

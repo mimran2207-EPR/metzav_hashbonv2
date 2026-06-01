@@ -16,7 +16,7 @@ const FlowHost      = lazy(() => import('./flows.jsx').then(m => ({ default: m.F
 import { useTweaks, TweaksPanel, TweakSection, TweakRadio, TweakColor, TweakToggle } from './tweaks-panel.jsx';
 import { SectionHead, Card, Segmented, ToastHost, useMediaQuery } from './ui.jsx';
 import { Icon } from './icons.jsx';
-import { PAYER, TOTALS, SERVICES, TXNS, TXN_TYPES, SUBJECTS, DOCUMENTS, AI_INSIGHTS, QUICK_ACTIONS, NOTES, WORKLIST, STATUS, CASE_TIMELINE, TASKS, TASK_TYPES, CURRENT_CLERK, buildCaseData, HOLDER_EXTRA, YEAR_BALANCES, CURRENT_YEAR } from './data.jsx';
+import { PAYER, TOTALS, SERVICES, TXNS, TXN_TYPES, SUBJECTS, DOCUMENTS, AI_INSIGHTS, QUICK_ACTIONS, NOTES, WORKLIST, STATUS, CASE_TIMELINE, TASKS, TASK_TYPES, CURRENT_CLERK, buildCaseData, HOLDER_EXTRA, YEAR_BALANCES, CURRENT_YEAR, YEAR_INFO, YEAR_STATUS } from './data.jsx';
 import { THEMES, generateThemeFromColor } from './table-utils.jsx';
 import { usePersistedState, loadPref, savePref } from './storage.js';
 import { toast } from './toast.js';
@@ -100,10 +100,16 @@ function App() {
   // year-aware totals: the demo payer's open year shows the real figures; a closed year shows
   // that year's closing balance. Other cases keep their single balance regardless of year.
   const totals = (isDemoCase && year === CURRENT_YEAR) ? TOTALS : (() => {
-    const b = isDemoCase ? (YEAR_BALANCES[year] ?? 0) : activeCase.balance;
-    const nominal = Math.round(b * 0.82), indexation = Math.round(b * 0.05);
+    if (isDemoCase) {
+      const { principal, balance } = YEAR_INFO[year];      // closed year: principal (קרן) vs updated balance
+      const indexation = Math.round((balance - principal) * 0.35);
+      return { nominal: principal, indexation, interest: balance - principal - indexation, get balance() { return balance; } };
+    }
+    const b = activeCase.balance, nominal = Math.round(b * 0.82), indexation = Math.round(b * 0.05);
     return { nominal, indexation, interest: b - nominal - indexation, get balance() { return b; } };
   })();
+  // year collection-status badge for the balance card (demo payer only)
+  const yearBadge = isDemoCase ? YEAR_STATUS[YEAR_INFO[year].status] : null;
   const openCase = (c) => { setActiveCase(c); setEntity("all"); setView("case"); window.scrollTo(0, 0); };
   // open a holder's card. The demo payer keeps their full multi-subject account (home); every
   // other holder opens the SAME real property — same id, data and holder chain — under their name,
@@ -214,7 +220,7 @@ function App() {
       <div style={{ background: "var(--wash-hero)", borderBottom: "1px solid var(--ink-100)",
         borderBottomLeftRadius: 24, borderBottomRightRadius: 24, marginTop: 10 }}>
         <div style={{ maxWidth: 1360, margin: "0 auto", padding: "20px 24px 24px" }}>
-          <HeroZone p={activePayer} totals={totals} year={year} notesCount={notes.length} docsCount={DOCUMENTS.length} insights={AI_INSIGHTS} handlers={handlers} showStrip={ai !== "subtle"} narrow={narrow} onYear={setYear}/>
+          <HeroZone p={activePayer} totals={totals} year={year} yearBadge={yearBadge} notesCount={notes.length} docsCount={DOCUMENTS.length} insights={AI_INSIGHTS} handlers={handlers} showStrip={ai !== "subtle"} narrow={narrow} onYear={setYear}/>
         </div>
       </div>
 
