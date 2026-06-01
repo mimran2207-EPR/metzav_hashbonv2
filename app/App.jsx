@@ -19,6 +19,7 @@ import { Icon } from './icons.jsx';
 import { PAYER, TOTALS, SERVICES, TXNS, TXN_TYPES, SUBJECTS, DOCUMENTS, AI_INSIGHTS, QUICK_ACTIONS, NOTES, WORKLIST, STATUS, CASE_TIMELINE, TASKS, TASK_TYPES, CURRENT_CLERK, buildCaseData, HOLDER_EXTRA, YEAR_BALANCES, CURRENT_YEAR, YEAR_INFO, YEAR_STATUS } from './data.jsx';
 import { usePersistedState } from './storage.js';
 import { useTheme, useGlobalShortcuts } from './hooks.js';
+import { WorkspaceContext } from './workspace-context.js';
 import { toast } from './toast.js';
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
@@ -161,6 +162,7 @@ function App() {
   const addNote = (text) => setNotes(n => [{ id: Date.now(), author: "שמעון עמר", role: "פקיד גבייה", date: new Date().toLocaleDateString("he-IL") + " " + new Date().toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" }), text }, ...n]);
 
   return (
+    <WorkspaceContext.Provider value={{ year, setYear, openHolder, activePayerNo: activePayer.payerNo }}>
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <TopBar onCommand={() => setCmdOpen(true)}
           onNav={(id) => { if (id === "back") { if (view === "case") setCmdOpen(true); else setView("case"); } }}
@@ -191,7 +193,7 @@ function App() {
       <div style={{ background: "var(--wash-hero)", borderBottom: "1px solid var(--ink-100)",
         borderBottomLeftRadius: 24, borderBottomRightRadius: 24, marginTop: 10 }}>
         <div style={{ maxWidth: 1360, margin: "0 auto", padding: "20px 24px 24px" }}>
-          <HeroZone p={activePayer} totals={totals} year={year} yearBadge={yearBadge} notesCount={notes.length} docsCount={DOCUMENTS.length} insights={AI_INSIGHTS} handlers={handlers} showStrip={ai !== "subtle"} narrow={narrow} onYear={setYear}/>
+          <HeroZone p={activePayer} totals={totals} yearBadge={yearBadge} notesCount={notes.length} docsCount={DOCUMENTS.length} insights={AI_INSIGHTS} handlers={handlers} showStrip={ai !== "subtle"} narrow={narrow}/>
         </div>
       </div>
 
@@ -235,8 +237,6 @@ function App() {
                 density={density}
                 txnTypes={TXN_TYPES}
                 onAction={runAction}
-                onOpenHolder={openHolder}
-                activePayerNo={activePayer.payerNo}
                 onOpenWide={(naxas) => { setWideNaxas(naxas || null); setWideOpen(true); }}/>
             </div>
           </Card>
@@ -284,6 +284,7 @@ function App() {
         <TweakToggle label="קו רקיע בתחתית" value={t.showCityscape} onChange={v => setTweak("showCityscape", v)}/>
       </TweaksPanel>
     </div>
+    </WorkspaceContext.Provider>
   );
 }
 

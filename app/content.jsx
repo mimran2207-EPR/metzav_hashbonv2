@@ -4,6 +4,7 @@ import { Chip, Segmented } from './ui.jsx';
 import { fmt, SUBJECT_DETAILS, TXNS, QUICK_ACTIONS } from './data.jsx';
 import { useColSort, useColOrder, SortTh, ColumnPicker, useColVisibility } from './table-utils.jsx';
 import { dateKey } from './dates.js';
+import { useWorkspaceCtx } from './workspace-context.js';
 import s from './ui.module.css';
 import { toast } from './toast.js';
 
@@ -509,7 +510,8 @@ function HoldersHistoryModal({ entity, onClose, onOpenHolder }) {
 // Level 1: entity row with named columns (matches legacy MASTER screen layout).
 // Level 2: PropertyContextPanel + charges sub-table, inline below the row.
 // Level 3: TxnTable per charge, inline below the charge row.
-function AllEntitiesView({ subjects, filterSubject, density, txnTypes, onAction, onOpenWide, detailsMap, onOpenHolder, activePayerNo }) {
+function AllEntitiesView({ subjects, filterSubject, density, txnTypes, onAction, onOpenWide, detailsMap }) {
+  const { openHolder, activePayerNo } = useWorkspaceCtx();
   const [openEntity, setOpenEntity] = useState(null);
   const [openCharge, setOpenCharge] = useState(null);
   const [typesModal, setTypesModal] = useState(null);   // entity for property-types modal
@@ -877,7 +879,7 @@ function AllEntitiesView({ subjects, filterSubject, density, txnTypes, onAction,
     {/* ── modals ── */}
     <PropertyTypesModal entity={typesModal} onClose={() => setTypesModal(null)}/>
     <HoldersHistoryModal entity={holdersModal} onClose={() => setHoldersModal(null)}
-      onOpenHolder={onOpenHolder}/>
+      onOpenHolder={openHolder}/>
     </>
   );
 }

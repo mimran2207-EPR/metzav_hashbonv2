@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Icon } from './icons.jsx';
 import { Card, Chip, PillButton, useMediaQuery } from './ui.jsx';
 import { YEARS, YEAR_BALANCES, YEAR_INFO, YEAR_STATUS, YEAR_TOTAL, fmt } from './data.jsx';
+import { useWorkspaceCtx } from './workspace-context.js';
 import s from './ui.module.css';
 import { toast } from './toast.js';
 
@@ -56,7 +57,8 @@ function IdentityCard({ p }) {
   );
 }
 
-function BalanceCard({ totals, year, onPay, statusBadge, onYear }) {
+function BalanceCard({ totals, onPay, statusBadge }) {
+  const { year, setYear } = useWorkspaceCtx();
   const [pickerOpen, setPickerOpen] = useState(false);
   const parts = [
     { label: "נומינלי (קרן)", val: totals.nominal },
@@ -74,12 +76,12 @@ function BalanceCard({ totals, year, onPay, statusBadge, onYear }) {
         background: "rgba(255,255,255,.08)", pointerEvents: "none" }}/>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
         <span style={{ fontSize: 13.5, fontWeight: 600, color: "rgba(255,255,255,.85)" }}>יתרה למשלם</span>
-        <button data-focusring onClick={() => onYear && setPickerOpen(true)} title="בחר שנה / כל השנים"
+        <button data-focusring onClick={() => setPickerOpen(true)} title="בחר שנה / כל השנים"
           style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,.16)", color: "#fff",
           fontSize: 12, fontWeight: 600, padding: "4px 10px", borderRadius: 999, lineHeight: 1.4,
-          border: "1px solid rgba(255,255,255,.28)", cursor: onYear ? "pointer" : "default", fontFamily: "var(--font)" }}>
+          border: "1px solid rgba(255,255,255,.28)", cursor: "pointer", fontFamily: "var(--font)" }}>
           <Icon name="calendar" size={13} color="#fff"/> שנת {year}
-          {onYear && <Icon name="chevdown" size={13} color="#fff"/>}
+          <Icon name="chevdown" size={13} color="#fff"/>
         </button>
       </div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 10, position: "relative" }}>
@@ -107,7 +109,7 @@ function BalanceCard({ totals, year, onPay, statusBadge, onYear }) {
         <PillButton variant="light" icon="sigma" onClick={() => toast("נפתח סיכום כספי למשלם", "sigma")}>סיכום</PillButton>
       </div>
     </Card>
-    {pickerOpen && onYear && <YearPickerModal year={year} onYear={onYear} onClose={() => setPickerOpen(false)}/>}
+    {pickerOpen && <YearPickerModal year={year} onYear={setYear} onClose={() => setPickerOpen(false)}/>}
     </>
   );
 }
@@ -254,12 +256,12 @@ function YearPickerModal({ year, onYear, onClose }) {
   );
 }
 
-function HeroZone({ p, totals, year, yearBadge, notesCount, docsCount, insights, handlers, showStrip = true, narrow = false, onYear }) {
+function HeroZone({ p, totals, yearBadge, notesCount, docsCount, insights, handlers, showStrip = true, narrow = false }) {
   return (
     <div className="mu-rise" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "1.15fr 1.3fr 1fr", gap: 14, alignItems: "stretch" }}>
         <IdentityCard p={p}/>
-        <BalanceCard totals={totals} year={year} onPay={handlers.onPay} statusBadge={yearBadge} onYear={onYear}/>
+        <BalanceCard totals={totals} onPay={handlers.onPay} statusBadge={yearBadge}/>
         <AlertsCard notesCount={notesCount} docsCount={docsCount} onNotes={handlers.onNotes} onDocs={handlers.onDocs} onEnforce={handlers.onEnforce}/>
       </div>
       {showStrip && <AIStrip insights={insights} onCopilot={handlers.onCopilot} onAction={handlers.onFlow}/>}
