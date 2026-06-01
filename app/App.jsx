@@ -102,9 +102,13 @@ function App() {
     return { nominal, indexation, interest: b - nominal - indexation, get balance() { return b; } };
   })();
   const openCase = (c) => { setActiveCase(c); setEntity("all"); setView("case"); window.scrollTo(0, 0); };
-  // open a holder's own account — reuse a known case if the payer exists, else synthesize one.
-  // carry the property's real holder chain so the current-holder is consistent across both payers.
-  const openHolder = (h, entity) => { if (h) openCase(WORKLIST.find(c => c.id === h.payerNo) || { id: h.payerNo, name: h.name, balance: h.balance || 0, status: "active", holderChain: entity?.holders, propertyName: entity?.name }); };
+  // open a holder's card. The current holder maps to a real case (full account); a previous holder
+  // shows the SAME real property (same id/data/chain) under their name — never a fabricated property.
+  const openHolder = (h, entity, propBalance) => {
+    if (!h) return;
+    openCase(WORKLIST.find(c => c.id === h.payerNo)
+      || { id: h.payerNo, name: h.name, balance: propBalance ?? h.balance ?? 0, status: "active", realSubject: entity?.subject, realSubItem: entity?.subItem });
+  };
   const runNba = (c) => { setActiveCase(c); openFlow(c.nba.flow, { balance: c.balance, payerName: c.name, subtitle: `${c.name} · ${c.id}` }); };
 
   // open a guided action flow with payer context
@@ -249,6 +253,7 @@ function App() {
                 txnTypes={TXN_TYPES}
                 onAction={runAction}
                 onOpenHolder={openHolder}
+                activePayerNo={activePayer.payerNo}
                 onOpenWide={(naxas) => { setWideNaxas(naxas || null); setWideOpen(true); }}/>
             </div>
           </Card>

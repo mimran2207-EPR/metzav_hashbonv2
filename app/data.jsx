@@ -386,14 +386,17 @@ function synthRows(balance) {
 // so the drill view always reflects the open case (no more "demo data" mismatch).
 function buildCaseData(c) {
   if (!c || c.id === PAYER.payerNo) return { subjects: SUBJECTS, details: SUBJECT_DETAILS };
+  // opened from a real property's holder chain → show that exact property (same id/name/data/chain),
+  // so switching between its holders never fabricates a new property or a second current holder.
+  if (c.realSubItem && c.realSubject) {
+    return { subjects: [{ ...c.realSubject, count: 1 }], details: { [c.realSubject.id]: { subItems: [c.realSubItem] } } };
+  }
   const B = c.balance, idNum = (c.id.replace(/\D/g, "") || "1");
-  // prefer the real shared holder chain (so the current holder stays consistent across payers);
-  // fall back to a single self-as-current holder for standalone cases.
-  const holders = c.holderChain || [{ name: c.name, payerNo: c.id, from: "01/2020", to: null, current: true, reason: "רכישה" }];
+  const holders = [{ name: c.name, payerNo: c.id, from: "01/2020", to: null, current: true, reason: "רכישה" }];
   const isBiz = (c.tags || []).includes("עסק");
   const p1 = B > 0 && isBiz ? Math.round(B * 0.6) : B, p2 = B - p1;
   const subItems = [{
-    id: idNum, name: c.propertyName || (isBiz ? "נכס מסחרי ראשי" : "דירת מגורים"), meta: "כתובת התיק",
+    id: idNum, name: isBiz ? "נכס מסחרי ראשי" : "דירת מגורים", meta: "כתובת התיק",
     propertyTypes: [{ code: "100", desc: isBiz ? "מבנה מסחרי" : "בית מגורים", area: 90, unit: 'מ"ר' }], holders,
     charges: [
       { id: idNum + "-arn", code: 1, name: "ארנונה",      srcYear: 2026, discount: null, arrangement: c.status === "arrangement" ? 100 : null, tracking: false, rows: synthRows(Math.round(p1 * 0.72)) },

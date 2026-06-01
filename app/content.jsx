@@ -406,10 +406,10 @@ function PropertyTypesModal({ entity, onClose }) {
 
 // HoldersHistoryModal — shows all historical holders for an entity.
 // Each holder has a "פתח כרטיס יתרה" button to navigate to their account.
-function HoldersHistoryModal({ entity, onClose, onOpenHolder }) {
+function HoldersHistoryModal({ entity, onClose, onOpenHolder, activePayerNo }) {
   if (!entity) return null;
   const holders = entity.holders || [];
-  const currentHolder = holders.find(h => h.current);
+  const propBalance = (entity.charges || []).reduce((a, c) => a + chargeBalance(c), 0);
   return (
     <>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(20,38,50,.42)", zIndex: 7000 }}/>
@@ -434,9 +434,12 @@ function HoldersHistoryModal({ entity, onClose, onOpenHolder }) {
           <div style={{ padding: "12px 0" }}>
             {holders.length === 0 ? (
               <div style={{ textAlign: "center", color: "var(--ink-400)", padding: "24px", fontSize: 13 }}>אין נתוני מחזיקים</div>
-            ) : holders.map((h, i) => (
+            ) : holders.map((h, i) => {
+              const viewing = activePayerNo != null && h.payerNo === activePayerNo;
+              return (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 20px",
-                background: h.current ? "var(--teal-50)" : "#fff",
+                background: h.current ? "var(--teal-50)" : viewing ? "var(--ink-50)" : "#fff",
+                boxShadow: viewing ? "inset 3px 0 0 var(--teal-500)" : "none",
                 borderBottom: i < holders.length - 1 ? "1px solid var(--ink-100)" : "none" }}>
                 {/* avatar */}
                 <div style={{ width: 40, height: 40, borderRadius: 999, flex: "none", display: "grid", placeItems: "center",
@@ -452,6 +455,8 @@ function HoldersHistoryModal({ entity, onClose, onOpenHolder }) {
                     {h.current
                       ? <Chip tone="green" style={{ fontSize: 10 }}>מחזיק נוכחי</Chip>
                       : <Chip tone="gray" style={{ fontSize: 10 }}>קודם</Chip>}
+                    {viewing && <span style={{ fontSize: 10, fontWeight: 700, color: "var(--teal-700)",
+                      background: "var(--teal-100)", borderRadius: 999, padding: "1px 8px" }}>צופים בכרטיס</span>}
                     {h.reason && <span style={{ fontSize: 11, color: "var(--ink-muted)" }}>· {h.reason}</span>}
                   </div>
                   <div style={{ fontSize: 12, color: "var(--ink-muted)", marginTop: 2 }}>
@@ -460,7 +465,7 @@ function HoldersHistoryModal({ entity, onClose, onOpenHolder }) {
                   </div>
                 </div>
                 {/* action */}
-                <button data-focusring onClick={() => { onOpenHolder && onOpenHolder(h, entity); onClose(); }}
+                <button data-focusring onClick={() => { onOpenHolder && onOpenHolder(h, entity, propBalance); onClose(); }}
                   title={`פתח כרטיס יתרה של ${h.name}`}
                   style={{ display: "inline-flex", alignItems: "center", gap: 6, flex: "none",
                     border: "1px solid var(--teal-300)", background: h.current ? "var(--teal-600)" : "var(--white)",
@@ -471,7 +476,8 @@ function HoldersHistoryModal({ entity, onClose, onOpenHolder }) {
                   כרטיס יתרה
                 </button>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
@@ -483,7 +489,7 @@ function HoldersHistoryModal({ entity, onClose, onOpenHolder }) {
 // Level 1: entity row with named columns (matches legacy MASTER screen layout).
 // Level 2: PropertyContextPanel + charges sub-table, inline below the row.
 // Level 3: TxnTable per charge, inline below the charge row.
-function AllEntitiesView({ subjects, filterSubject, density, txnTypes, onAction, onOpenWide, detailsMap, onOpenHolder }) {
+function AllEntitiesView({ subjects, filterSubject, density, txnTypes, onAction, onOpenWide, detailsMap, onOpenHolder, activePayerNo }) {
   const [openEntity, setOpenEntity] = useState(null);
   const [openCharge, setOpenCharge] = useState(null);
   const [typesModal, setTypesModal] = useState(null);   // entity for property-types modal
@@ -846,7 +852,7 @@ function AllEntitiesView({ subjects, filterSubject, density, txnTypes, onAction,
     {/* ── modals ── */}
     <PropertyTypesModal entity={typesModal} onClose={() => setTypesModal(null)}/>
     <HoldersHistoryModal entity={holdersModal} onClose={() => setHoldersModal(null)}
-      onOpenHolder={onOpenHolder}/>
+      onOpenHolder={onOpenHolder} activePayerNo={activePayerNo}/>
     </>
   );
 }
