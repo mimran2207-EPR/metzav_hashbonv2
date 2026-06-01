@@ -4,7 +4,7 @@ import { Tip } from './ui.jsx';
 import { ThemePicker } from './table-utils.jsx';
 import s from './ui.module.css';
 
-function TopBar({ onCommand, onNav, year, breadcrumb, view, onSwitchView, taskCount = 0, themeId, onThemeChange, onCustomTheme }) {
+function TopBar({ onCommand, onNav, breadcrumb, view, onSwitchView, taskCount = 0, themeId, onThemeChange, onCustomTheme }) {
   const NavTab = ({ id, label, badge }) => {
     const active = view === id;
     return (

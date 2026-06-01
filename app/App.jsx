@@ -176,7 +176,7 @@ function App() {
           onNav={(id) => { if (id === "back") { if (view === "case") setCmdOpen(true); else setView("case"); } }}
           view={view} onSwitchView={setView} taskCount={openTaskCount}
           themeId={themeId} onThemeChange={setThemeId} onCustomTheme={handleCustomTheme}
-          year={year} breadcrumb={view === "worklist"
+          breadcrumb={view === "worklist"
             ? { name: "משימות שלי", no: `${openTaskCount} פתוחות` }
             : { name: activePayer.name, no: activePayer.payerNo }}/>
 
