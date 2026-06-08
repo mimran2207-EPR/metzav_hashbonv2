@@ -61,6 +61,8 @@ function App() {
   const openTaskCount = tasks.filter(t => !t.done).length;
   const toggleTask = (id) => setTasks(ts => ts.map(t => t.id === id ? { ...t, done: !t.done } : t));
   const addTask = (title, due) => setTasks(ts => [{ id: Date.now(), title, due: due || "", overdue: false, assignee: "שמעון עמר", priority: "med", caseName: activeCase.name, caseId: activeCase.id, done: false }, ...ts]);
+  // createTask — full task from the board's "משימה חדשה" modal (already shaped: type, priority, assignee, case, due…)
+  const createTask = (task) => { setTasks(ts => [{ id: Date.now(), done: false, ...task }, ...ts]); toast("המשימה נוצרה", "check", "success"); };
 
   useGlobalShortcuts(setCmdOpen, setCopilot);
 
@@ -177,6 +179,7 @@ function App() {
           <TaskBoard
             tasks={tasks}
             onToggle={toggleTask}
+            onCreate={createTask}
             onRunFlow={(flowId, task) => {
               // open the payer's case first, then run the flow
               const matchedCase = WORKLIST.find(c => c.id === task.caseId) || { id: task.caseId, name: task.caseName, balance: task.balance, status: "active", priority: "med", nba: {} };

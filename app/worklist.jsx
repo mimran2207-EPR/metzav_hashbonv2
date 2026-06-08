@@ -7,9 +7,9 @@
 // The secondary view is the case queue (all payers with debt).
 import React, { useState, useMemo } from 'react';
 import { Icon } from './icons.jsx';
-import { Chip } from './ui.jsx';
+import { Chip, Modal, PillButton } from './ui.jsx';
 import { WORKLIST, STATUS, TASK_TYPES, CLERKS, CURRENT_CLERK, fmt } from './data.jsx';
-import { parseDMY, TODAY } from './dates.js';
+import { parseDMY, fmtDMY, TODAY } from './dates.js';
 
 // ── helpers ────────────────────────────────────────────────────────────────
 const PRIO = {
@@ -36,6 +36,97 @@ function ScoreBar({ score }) {
   );
 }
 
+// ── NewTaskModal (create a task from the board) ────────────────────────────
+// Shared field styling so the form reads like the rest of the workspace.
+const fieldStyle = {
+  width: "100%", boxSizing: "border-box", border: "1px solid var(--ink-200)", borderRadius: 10,
+  padding: "9px 11px", fontFamily: "var(--font)", fontSize: 13.5, color: "var(--ink-800)",
+  outline: "none", background: "#fff",
+};
+const labelStyle = { fontSize: 12, fontWeight: 700, color: "var(--ink-600)", marginBottom: 5, display: "block" };
+
+function NewTaskModal({ open, onClose, onCreate }) {
+  const [title, setTitle] = useState("");
+  const [type, setType] = useState("followup");
+  const [priority, setPriority] = useState("med");
+  const [assignee, setAssignee] = useState(CURRENT_CLERK.id);
+  const [caseId, setCaseId] = useState(WORKLIST[0]?.id || "");
+  const [due, setDue] = useState("");      // native input value (YYYY-MM-DD)
+  const [note, setNote] = useState("");
+
+  const reset = () => { setTitle(""); setType("followup"); setPriority("med"); setAssignee(CURRENT_CLERK.id); setCaseId(WORKLIST[0]?.id || ""); setDue(""); setNote(""); };
+  const close = () => { reset(); onClose(); };
+
+  const submit = () => {
+    if (!title.trim()) return;
+    const c = WORKLIST.find(w => w.id === caseId);
+    // native date (YYYY-MM-DD) → app format (DD/MM/YYYY); overdue if past TODAY
+    let dueDMY = "", overdue = false;
+    if (due) { const dt = new Date(due + "T00:00:00"); dueDMY = fmtDMY(dt); overdue = dt < TODAY; }
+    onCreate({
+      title: title.trim(), type, priority, assignee,
+      caseId, caseName: c?.name || "", balance: c?.balance || 0,
+      due: dueDMY, overdue, note: note.trim(),
+    });
+    close();
+  };
+
+  return (
+    <Modal open={open} onClose={close} title="משימה חדשה" sub="פתיחת משימת מעקב או טיפול" maxWidth={520}>
+      <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
+        <div>
+          <label style={labelStyle}>כותרת המשימה</label>
+          <input autoFocus value={title} onChange={e => setTitle(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") submit(); }}
+            placeholder="למשל: שיחת מעקב עם המשלם" style={fieldStyle}/>
+        </div>
+        <div style={{ display: "flex", gap: 12 }}>
+          <div style={{ flex: 1 }}>
+            <label style={labelStyle}>סוג משימה</label>
+            <select value={type} onChange={e => setType(e.target.value)} style={{ ...fieldStyle, cursor: "pointer", appearance: "none" }}>
+              {Object.entries(TASK_TYPES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+            </select>
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={labelStyle}>עדיפות</label>
+            <select value={priority} onChange={e => setPriority(e.target.value)} style={{ ...fieldStyle, cursor: "pointer", appearance: "none" }}>
+              {Object.entries(PRIO).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+            </select>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 12 }}>
+          <div style={{ flex: 1 }}>
+            <label style={labelStyle}>תיק / משלם</label>
+            <select value={caseId} onChange={e => setCaseId(e.target.value)} style={{ ...fieldStyle, cursor: "pointer", appearance: "none" }}>
+              {WORKLIST.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+            </select>
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={labelStyle}>אחראי</label>
+            <select value={assignee} onChange={e => setAssignee(e.target.value)} style={{ ...fieldStyle, cursor: "pointer", appearance: "none" }}>
+              {CLERKS.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+        </div>
+        <div>
+          <label style={labelStyle}>תאריך יעד (אופציונלי)</label>
+          <input type="date" value={due} onChange={e => setDue(e.target.value)} style={{ ...fieldStyle, cursor: "pointer" }}/>
+        </div>
+        <div>
+          <label style={labelStyle}>הערה (אופציונלי)</label>
+          <input value={note} onChange={e => setNote(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") submit(); }}
+            placeholder="פרטים נוספים…" style={fieldStyle}/>
+        </div>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 4 }}>
+          <PillButton variant="ghost" onClick={close}>ביטול</PillButton>
+          <PillButton variant="primary" icon="plus" onClick={submit} disabled={!title.trim()}>צור משימה</PillButton>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 // ── TaskBoard (primary landing: per-clerk task queue) ──────────────────────
 const VIEWS = [
   { id: "mine",   label: "המשימות שלי" },
@@ -49,11 +140,12 @@ const PERIODS = [
   { id: "all",     label: "הכל" },
 ];
 
-function TaskBoard({ tasks, onToggle, onRunFlow, onOpenCase, onOpenTasks }) {
+function TaskBoard({ tasks, onToggle, onRunFlow, onOpenCase, onOpenTasks, onCreate }) {
   const [view, setView] = useState("mine");
   const [period, setPeriod] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [clerkFilter, setClerkFilter] = useState(CURRENT_CLERK.id);
+  const [newOpen, setNewOpen] = useState(false);
 
   const taskTypes = useMemo(() => ["all", ...new Set(tasks.map(t => t.type))], [tasks]);
 
@@ -111,8 +203,8 @@ function TaskBoard({ tasks, onToggle, onRunFlow, onOpenCase, onOpenTasks }) {
             </div>
           </div>
         </div>
-        {/* KPI chips */}
-        <div style={{ display: "flex", gap: 10 }}>
+        {/* KPI chips + create */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {[
             { label: "פתוחות (שלי)", val: openCount, color: "var(--teal-700)" },
             { label: "חריגות SLA", val: overdueCount, color: "var(--red)" },
@@ -124,6 +216,7 @@ function TaskBoard({ tasks, onToggle, onRunFlow, onOpenCase, onOpenTasks }) {
               <div style={{ fontSize: 11.5, color: "var(--ink-muted)", marginTop: 2 }}>{k.label}</div>
             </div>
           ))}
+          <PillButton variant="primary" icon="plus" onClick={() => setNewOpen(true)}>משימה חדשה</PillButton>
         </div>
       </div>
 
@@ -244,6 +337,8 @@ function TaskBoard({ tasks, onToggle, onRunFlow, onOpenCase, onOpenTasks }) {
           );
         })}
       </div>
+
+      <NewTaskModal open={newOpen} onClose={() => setNewOpen(false)} onCreate={onCreate}/>
     </div>
   );
 }

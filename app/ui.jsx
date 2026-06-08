@@ -173,4 +173,48 @@ function Sheet({ open, onClose, title, sub, width = 420, children, footer, side 
   );
 }
 
-export { PillButton, Card, Chip, SectionHead, Tip, Segmented, ToastHost, Sheet, useMediaQuery };
+// Modal — centered dialog over a dimmed overlay. Closes on Escape, click-outside or ✕,
+// and manages focus (like Sheet). Pass title/sub for the standard teal header, or omit
+// them to render a custom header inside children.
+function Modal({ open, onClose, title, sub, maxWidth = 540, children }) {
+  const panelRef = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    const prevFocus = document.activeElement;
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    const id = requestAnimationFrame(() => panelRef.current && panelRef.current.focus());
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      cancelAnimationFrame(id);
+      if (prevFocus && typeof prevFocus.focus === "function") prevFocus.focus();
+    };
+  }, [open, onClose]);
+  if (!open) return null;
+  return (
+    <div onClick={onClose} className="mu-rise"
+      style={{ position: "fixed", inset: 0, zIndex: 7000, background: "rgba(20,38,50,.42)",
+        display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={typeof title === "string" ? title : undefined}
+        onClick={e => e.stopPropagation()}
+        style={{ background: "#fff", borderRadius: 16, boxShadow: "var(--shadow-lg)", width: "100%", maxWidth,
+          maxHeight: "86vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        {title != null && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flex: "none",
+            padding: "16px 20px", background: "linear-gradient(135deg,var(--teal-700),var(--teal-600))", color: "#fff" }}>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 700 }}>{title}</div>
+              {sub != null && <div className="num" style={{ fontSize: 12, color: "rgba(255,255,255,.75)", marginTop: 2 }}>{sub}</div>}
+            </div>
+            <button data-focusring onClick={onClose} aria-label="סגור"
+              style={{ width: 32, height: 32, display: "grid", placeItems: "center", border: "none",
+                background: "rgba(255,255,255,.18)", borderRadius: 8, cursor: "pointer", color: "#fff", fontSize: 16 }}>✕</button>
+          </div>
+        )}
+        <div style={{ overflow: "auto" }}>{children}</div>
+      </div>
+    </div>
+  );
+}
+
+export { PillButton, Card, Chip, SectionHead, Tip, Segmented, ToastHost, Sheet, Modal, useMediaQuery };
